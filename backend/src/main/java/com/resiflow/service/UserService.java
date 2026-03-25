@@ -4,14 +4,17 @@ import com.resiflow.dto.CreateUserRequest;
 import com.resiflow.entity.User;
 import com.resiflow.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserService(final UserRepository userRepository) {
+    public UserService(final UserRepository userRepository, final PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public User createUser(final CreateUserRequest request) {
@@ -19,7 +22,7 @@ public class UserService {
 
         User user = new User();
         user.setEmail(request.getEmail().trim());
-        user.setPassword(request.getPassword().trim());
+        user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         user.setResidenceId(request.getResidenceId());
 
         return userRepository.save(user);

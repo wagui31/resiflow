@@ -42,3 +42,10 @@
 - Ajout du service `JwtService` pour générer, valider et lire les claims principaux des tokens.
 - Génération d'un JWT lors du login et retour du token dans la réponse `POST /auth/login`.
 - Ajout et adaptation des tests unitaires pour couvrir la génération JWT et la réponse de login.
+
+### TASK-10
+- Ajout de la configuration Spring Security stateless avec `SecurityFilterChain`, désactivation de la session, `formLogin`, `httpBasic` et `csrf`.
+- Autorisation publique de `GET /health`, `POST /auth/login` et `POST /users`, avec authentification requise pour les autres routes.
+- Ajout d'un filtre JWT qui lit le bearer token, valide le token et place l'utilisateur authentifié dans le contexte de sécurité.
+- Ajout d'un `PasswordEncoder` BCrypt et intégration du hashage lors de la création utilisateur et de la vérification lors du login.
+- Adaptation et ajout des tests pour couvrir le hashage des mots de passe et les règles principales de sécurité.

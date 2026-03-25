@@ -6,17 +6,21 @@ import com.resiflow.repository.UserRepository;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserServiceTest {
 
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+
     @Test
     void createUserSavesUserFromRequest() {
         AtomicReference<User> savedUserRef = new AtomicReference<>();
         UserRepository userRepository = repositoryProxy(savedUserRef);
-        UserService userService = new UserService(userRepository);
+        UserService userService = new UserService(userRepository, passwordEncoder);
 
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail(" resident@example.com ");
@@ -27,14 +31,14 @@ class UserServiceTest {
 
         User userToSave = savedUserRef.get();
         assertThat(userToSave.getEmail()).isEqualTo("resident@example.com");
-        assertThat(userToSave.getPassword()).isEqualTo("secret");
+        assertThat(passwordEncoder.matches("secret", userToSave.getPassword())).isTrue();
         assertThat(userToSave.getResidenceId()).isEqualTo(7L);
         assertThat(result.getId()).isEqualTo(1L);
     }
 
     @Test
     void createUserRejectsBlankEmail() {
-        UserService userService = new UserService(repositoryProxy(new AtomicReference<>()));
+        UserService userService = new UserService(repositoryProxy(new AtomicReference<>()), passwordEncoder);
 
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail(" ");
@@ -48,7 +52,7 @@ class UserServiceTest {
 
     @Test
     void createUserRejectsNullResidenceId() {
-        UserService userService = new UserService(repositoryProxy(new AtomicReference<>()));
+        UserService userService = new UserService(repositoryProxy(new AtomicReference<>()), passwordEncoder);
 
         CreateUserRequest request = new CreateUserRequest();
         request.setEmail("resident@example.com");

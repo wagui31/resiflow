@@ -7,6 +7,7 @@ import com.resiflow.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -23,7 +24,7 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        UserService userService = new UserService(null) {
+        UserService userService = new UserService(null, new BCryptPasswordEncoder()) {
             @Override
             public User createUser(final CreateUserRequest request) {
                 if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {

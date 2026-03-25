@@ -9,6 +9,8 @@ import com.resiflow.security.JwtService;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -16,17 +18,18 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AuthServiceTest {
 
     private static final String SECRET = "Zm9yLXRlc3RzLW9ubHktcmVzaWZsb3ctand0LXNlY3JldC1rZXktMzItYnl0ZXM=";
+    private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Test
     void loginReturnsUserDataWhenCredentialsAreValid() {
         User user = new User();
         user.setId(4L);
         user.setEmail("resident@example.com");
-        user.setPassword("secret");
+        user.setPassword(passwordEncoder.encode("secret"));
         user.setResidenceId(12L);
 
         JwtService jwtService = new JwtService(new JwtProperties(SECRET, 3600000));
-        AuthService authService = new AuthService(repositoryProxy(Optional.of(user)), jwtService);
+        AuthService authService = new AuthService(repositoryProxy(Optional.of(user)), jwtService, passwordEncoder);
 
         LoginRequest request = new LoginRequest();
         request.setEmail(" resident@example.com ");
@@ -45,7 +48,8 @@ class AuthServiceTest {
     void loginRejectsBlankEmail() {
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.empty()),
-                new JwtService(new JwtProperties(SECRET, 3600000))
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder
         );
 
         LoginRequest request = new LoginRequest();
@@ -61,7 +65,8 @@ class AuthServiceTest {
     void loginRejectsUnknownEmail() {
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.empty()),
-                new JwtService(new JwtProperties(SECRET, 3600000))
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder
         );
 
         LoginRequest request = new LoginRequest();
@@ -77,11 +82,12 @@ class AuthServiceTest {
     void loginRejectsInvalidPassword() {
         User user = new User();
         user.setEmail("resident@example.com");
-        user.setPassword("secret");
+        user.setPassword(passwordEncoder.encode("secret"));
 
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.of(user)),
-                new JwtService(new JwtProperties(SECRET, 3600000))
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder
         );
 
         LoginRequest request = new LoginRequest();

@@ -6,6 +6,7 @@ import com.resiflow.entity.User;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.JwtService;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Service
 public class AuthService {
@@ -14,10 +15,16 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final PasswordEncoder passwordEncoder;
 
-    public AuthService(final UserRepository userRepository, final JwtService jwtService) {
+    public AuthService(
+            final UserRepository userRepository,
+            final JwtService jwtService,
+            final PasswordEncoder passwordEncoder
+    ) {
         this.userRepository = userRepository;
         this.jwtService = jwtService;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public LoginResponse login(final LoginRequest request) {
@@ -29,7 +36,7 @@ public class AuthService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new InvalidCredentialsException(INVALID_CREDENTIALS_MESSAGE));
 
-        if (!user.getPassword().equals(password)) {
+        if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new InvalidCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
 

@@ -8,6 +8,7 @@ import com.resiflow.service.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -26,7 +27,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        AuthService authService = new AuthService(null, null) {
+        AuthService authService = new AuthService(null, null, new BCryptPasswordEncoder()) {
             @Override
             public LoginResponse login(final LoginRequest request) {
                 if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {

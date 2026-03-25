@@ -1,2 +1,2 @@
-# TASK-09 JWT
-Configurer JWT
+# TASK-10 Security
+Configurer Spring Security
