@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres:
     image: postgres:15
@@ -9,8 +7,6 @@ services:
       POSTGRES_DB: resiflow_db
       POSTGRES_USER: resiflow_user
       POSTGRES_PASSWORD: resiflow_pass
-    ports:
-      - "5432:5432"
     volumes:
       - resiflow_pgdata:/var/lib/postgresql/data
 

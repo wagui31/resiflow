@@ -1,7 +1,2 @@
-# TASK-01 Structure
-Créer packages :
-- controller
-- service
-- repository
-- entity
-- config
+# TASK-03 Config Spring
+Configurer application.yml pour PostgreSQL
