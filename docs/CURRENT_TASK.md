@@ -1,2 +1,6 @@
-# TASK-03 Config Spring
-Configurer application.yml pour PostgreSQL
+# TASK-04 Entity User
+Créer User entity avec:
+- id
+- email
+- password
+- residenceId
