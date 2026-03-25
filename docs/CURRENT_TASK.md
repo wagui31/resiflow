@@ -1,2 +1,2 @@
-# TASK-05 Repository
-Créer UserRepository
+# TASK-06 Service
+Créer UserService avec createUser()
