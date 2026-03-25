@@ -1,2 +1,2 @@
-# TASK-06 Service
-Créer UserService avec createUser()
+# TASK-07 Controller
+Créer UserController POST /users
