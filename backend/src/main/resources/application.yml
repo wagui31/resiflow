@@ -1,0 +1,9 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/resiflow_db
+    username: resiflow_user
+    password: resiflow_pass
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
