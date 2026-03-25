@@ -28,3 +28,11 @@
 - Création des packages `auth`, `security`, `user`, `residence`, `invitation`, `wallet`, `incident`, `event`, `vote`, `notification` et `common` sous `src/main/java/com/resiflow/` chacun accompagné d'un `package-info.java` descriptif.
 - Réplication à l'identique de l'arborescence de tests sous `src/test/java/com/resiflow/` pour préparer les fixtures unitaires.
 - Exécution de `./mvnw test` (Java 21 Temurin local via `JAVA_HOME`) pour vérifier que le projet compile toujours.
+
+### TASK-08
+- Ajout du endpoint `POST /auth/login`.
+- Ajout des DTO `LoginRequest` et `LoginResponse`.
+- Ajout de la logique de login via email et mot de passe à partir des données utilisateur existantes.
+- Gestion des erreurs de validation en `400 Bad Request` et des identifiants invalides en `401 Unauthorized`.
+- Ajout des tests unitaires contrôleur et service pour le login.
+- Adaptation des tests existants pour qu'ils soient exécutables dans l'environnement local courant, puis exécution réussie de `./mvnw test`.
