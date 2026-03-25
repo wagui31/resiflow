@@ -2,6 +2,13 @@
 
 ## Historique des tâches terminées
 
+### TASK-00
+- Initialisation du backend Spring Boot dans `backend/` avec Maven Wrapper.
+- Configuration du package `com.resiflow` et création de la classe `ResiflowApplication`.
+- Ajout du endpoint `GET /health` qui retourne `OK`.
+- Ajout d'un test d'intégration simple sur `/health`.
+- Désactivation temporaire de l'auto-configuration datasource/JPA pour permettre le démarrage sans configuration PostgreSQL à ce stade.
+
 ### TASK-0.1
 - Initialisation du backend Spring Boot (Java 21, Maven) avec les dépendances Web, Security, Data JPA, Validation, PostgreSQL et Lombok.
 - Ajout d'un endpoint `/health` qui retourne `{"status":"OK"}` et d'un test d'intégration `HealthControllerTest`.
