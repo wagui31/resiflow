@@ -20,7 +20,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 		webEnvironment = SpringBootTest.WebEnvironment.MOCK,
 		properties = {
 				"spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration,"
-						+ "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration",
+						+ "org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration,"
+						+ "org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration",
+				"app.jwt.secret=Zm9yLXRlc3RzLW9ubHktcmVzaWZsb3ctand0LXNlY3JldC1rZXktMzItYnl0ZXM=",
+				"app.jwt.expiration-ms=3600000",
 				"spring.main.lazy-initialization=true"
 		}
 )

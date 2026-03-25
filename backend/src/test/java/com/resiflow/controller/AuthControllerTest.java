@@ -18,13 +18,15 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class AuthControllerTest {
 
+    private static final String TOKEN = "jwt-token";
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private MockMvc mockMvc;
 
     @BeforeEach
     void setUp() {
-        AuthService authService = new AuthService(null) {
+        AuthService authService = new AuthService(null, null) {
             @Override
             public LoginResponse login(final LoginRequest request) {
                 if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
@@ -32,7 +34,7 @@ class AuthControllerTest {
                 }
                 if ("resident@example.com".equals(request.getEmail().trim())
                         && "secret".equals(request.getPassword().trim())) {
-                    return new LoginResponse(1L, "resident@example.com", 7L);
+                    return new LoginResponse(1L, "resident@example.com", 7L, TOKEN);
                 }
                 throw new InvalidCredentialsException("Invalid credentials");
             }
@@ -53,7 +55,8 @@ class AuthControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.userId").value(1L))
                 .andExpect(jsonPath("$.email").value("resident@example.com"))
-                .andExpect(jsonPath("$.residenceId").value(7L));
+                .andExpect(jsonPath("$.residenceId").value(7L))
+                .andExpect(jsonPath("$.token").value(TOKEN));
     }
 
     @Test

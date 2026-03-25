@@ -4,6 +4,7 @@ import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
 import com.resiflow.entity.User;
 import com.resiflow.repository.UserRepository;
+import com.resiflow.security.JwtService;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -12,9 +13,11 @@ public class AuthService {
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid credentials";
 
     private final UserRepository userRepository;
+    private final JwtService jwtService;
 
-    public AuthService(final UserRepository userRepository) {
+    public AuthService(final UserRepository userRepository, final JwtService jwtService) {
         this.userRepository = userRepository;
+        this.jwtService = jwtService;
     }
 
     public LoginResponse login(final LoginRequest request) {
@@ -30,7 +33,8 @@ public class AuthService {
             throw new InvalidCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
 
-        return new LoginResponse(user.getId(), user.getEmail(), user.getResidenceId());
+        String token = jwtService.generateToken(user);
+        return new LoginResponse(user.getId(), user.getEmail(), user.getResidenceId(), token);
     }
 
     private void validateRequest(final LoginRequest request) {

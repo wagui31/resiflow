@@ -36,3 +36,9 @@
 - Gestion des erreurs de validation en `400 Bad Request` et des identifiants invalides en `401 Unauthorized`.
 - Ajout des tests unitaires contrôleur et service pour le login.
 - Adaptation des tests existants pour qu'ils soient exécutables dans l'environnement local courant, puis exécution réussie de `./mvnw test`.
+
+### TASK-09
+- Ajout de la configuration JWT dans `application.yml` avec secret et durée d'expiration paramétrables par variables d'environnement.
+- Ajout du service `JwtService` pour générer, valider et lire les claims principaux des tokens.
+- Génération d'un JWT lors du login et retour du token dans la réponse `POST /auth/login`.
+- Ajout et adaptation des tests unitaires pour couvrir la génération JWT et la réponse de login.

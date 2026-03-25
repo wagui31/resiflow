@@ -4,6 +4,8 @@ import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
 import com.resiflow.entity.User;
 import com.resiflow.repository.UserRepository;
+import com.resiflow.security.JwtProperties;
+import com.resiflow.security.JwtService;
 import java.lang.reflect.Proxy;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class AuthServiceTest {
 
+    private static final String SECRET = "Zm9yLXRlc3RzLW9ubHktcmVzaWZsb3ctand0LXNlY3JldC1rZXktMzItYnl0ZXM=";
+
     @Test
     void loginReturnsUserDataWhenCredentialsAreValid() {
         User user = new User();
@@ -21,7 +25,8 @@ class AuthServiceTest {
         user.setPassword("secret");
         user.setResidenceId(12L);
 
-        AuthService authService = new AuthService(repositoryProxy(Optional.of(user)));
+        JwtService jwtService = new JwtService(new JwtProperties(SECRET, 3600000));
+        AuthService authService = new AuthService(repositoryProxy(Optional.of(user)), jwtService);
 
         LoginRequest request = new LoginRequest();
         request.setEmail(" resident@example.com ");
@@ -32,11 +37,16 @@ class AuthServiceTest {
         assertThat(response.getUserId()).isEqualTo(4L);
         assertThat(response.getEmail()).isEqualTo("resident@example.com");
         assertThat(response.getResidenceId()).isEqualTo(12L);
+        assertThat(response.getToken()).isNotBlank();
+        assertThat(jwtService.extractSubject(response.getToken())).isEqualTo("resident@example.com");
     }
 
     @Test
     void loginRejectsBlankEmail() {
-        AuthService authService = new AuthService(repositoryProxy(Optional.empty()));
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.empty()),
+                new JwtService(new JwtProperties(SECRET, 3600000))
+        );
 
         LoginRequest request = new LoginRequest();
         request.setEmail(" ");
@@ -49,7 +59,10 @@ class AuthServiceTest {
 
     @Test
     void loginRejectsUnknownEmail() {
-        AuthService authService = new AuthService(repositoryProxy(Optional.empty()));
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.empty()),
+                new JwtService(new JwtProperties(SECRET, 3600000))
+        );
 
         LoginRequest request = new LoginRequest();
         request.setEmail("resident@example.com");
@@ -66,7 +79,10 @@ class AuthServiceTest {
         user.setEmail("resident@example.com");
         user.setPassword("secret");
 
-        AuthService authService = new AuthService(repositoryProxy(Optional.of(user)));
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.of(user)),
+                new JwtService(new JwtProperties(SECRET, 3600000))
+        );
 
         LoginRequest request = new LoginRequest();
         request.setEmail("resident@example.com");

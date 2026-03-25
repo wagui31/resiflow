@@ -1,2 +1,2 @@
-# TASK-08 Auth
-Créer endpoint POST /auth/login
+# TASK-09 JWT
+Configurer JWT
