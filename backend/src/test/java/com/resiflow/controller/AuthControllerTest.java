@@ -41,7 +41,9 @@ class AuthControllerTest {
             }
         };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthController(authService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test

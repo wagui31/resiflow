@@ -70,3 +70,10 @@
 - Activation explicite de Flyway et passage de Hibernate en mode `validate` pour s'appuyer sur les migrations SQL.
 - Ajout de la migration initiale `V1__init_schema.sql` pour créer les tables `residences`, `users` et `invitations` selon les entités existantes.
 - Vérification par exécution des tests backend.
+
+### TASK-17
+- Ajout d'un gestionnaire global d'exceptions backend avec `@RestControllerAdvice`.
+- Centralisation de la gestion des `IllegalArgumentException` en `400 Bad Request`.
+- Centralisation de la gestion des `InvalidCredentialsException` en `401 Unauthorized`.
+- Suppression des handlers dupliqués dans les contrôleurs `AuthController`, `UserController` et `InvitationController`.
+- Adaptation des tests contrôleur pour charger le handler global.

@@ -42,7 +42,9 @@ class UserControllerTest {
             }
         };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test

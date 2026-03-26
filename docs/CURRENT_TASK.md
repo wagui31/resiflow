@@ -1,2 +1,2 @@
-# TASK-16 Logging
-Configurer logs
+# TASK-17 Error Handling
+Global exception handler

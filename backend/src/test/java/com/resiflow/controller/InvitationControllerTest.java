@@ -52,7 +52,9 @@ class InvitationControllerTest {
             }
         };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new InvitationController(invitationService)).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(new InvitationController(invitationService))
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .build();
     }
 
     @Test

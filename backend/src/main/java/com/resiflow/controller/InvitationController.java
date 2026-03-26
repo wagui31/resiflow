@@ -7,11 +7,9 @@ import com.resiflow.service.InvitationService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -32,11 +30,5 @@ public class InvitationController {
         AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
         InvitationResponse response = invitationService.createInvitation(request, authenticatedUser);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public String handleIllegalArgumentException(final IllegalArgumentException exception) {
-        return exception.getMessage();
     }
 }
