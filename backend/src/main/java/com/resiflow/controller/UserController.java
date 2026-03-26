@@ -1,6 +1,7 @@
 package com.resiflow.controller;
 
 import com.resiflow.dto.CreateUserRequest;
+import com.resiflow.dto.CreateUserResponse;
 import com.resiflow.entity.User;
 import com.resiflow.service.UserService;
 import org.springframework.http.HttpStatus;
@@ -23,9 +24,9 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<User> createUser(@RequestBody final CreateUserRequest request) {
+    public ResponseEntity<CreateUserResponse> createUser(@RequestBody final CreateUserRequest request) {
         User createdUser = userService.createUser(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+        return ResponseEntity.status(HttpStatus.CREATED).body(CreateUserResponse.fromUser(createdUser));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
