@@ -1,18 +1,23 @@
 package com.resiflow.config;
 
 import com.resiflow.dto.CreateUserRequest;
+import com.resiflow.dto.CreateInvitationRequest;
 import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
 import com.resiflow.controller.AuthController;
 import com.resiflow.controller.HealthController;
+import com.resiflow.controller.InvitationController;
 import com.resiflow.controller.UserController;
+import com.resiflow.dto.InvitationResponse;
 import com.resiflow.entity.User;
 import com.resiflow.security.JwtAuthenticationFilter;
 import com.resiflow.security.JwtProperties;
 import com.resiflow.security.JwtService;
 import com.resiflow.security.RestAuthenticationEntryPoint;
 import com.resiflow.service.AuthService;
+import com.resiflow.service.InvitationService;
 import com.resiflow.service.UserService;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -38,6 +43,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         HealthController.class,
         AuthController.class,
         UserController.class,
+        InvitationController.class,
         SecurityConfigTest.TestProtectedController.class
 })
 @Import({
@@ -66,6 +72,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     private UserService userService;
+
+    @MockitoBean
+    private InvitationService invitationService;
 
     @Test
     void healthEndpointIsPublic() throws Exception {
@@ -118,6 +127,16 @@ class SecurityConfigTest {
     }
 
     @Test
+    void invitationEndpointRequiresAuthentication() throws Exception {
+        mockMvc.perform(post("/invitations")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"targetValue":"resident@example.com","expiresAt":"2026-04-01T12:00:00"}
+                                """))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
     void protectedEndpointAcceptsValidBearerToken() throws Exception {
         User user = new User();
         user.setId(4L);
@@ -130,6 +149,39 @@ class SecurityConfigTest {
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(content().string("protected"));
+    }
+
+    @Test
+    void invitationEndpointAcceptsValidBearerToken() throws Exception {
+        User user = new User();
+        user.setId(4L);
+        user.setEmail("resident@example.com");
+        user.setResidenceId(12L);
+
+        String token = jwtService.generateToken(user);
+
+        when(invitationService.createInvitation(any(CreateInvitationRequest.class), any()))
+                .thenReturn(new InvitationResponse(
+                        5L,
+                        12L,
+                        "new-resident@example.com",
+                        "invitation-token",
+                        "ACTIVE",
+                        LocalDateTime.of(2026, 4, 1, 12, 0),
+                        4L,
+                        LocalDateTime.of(2026, 3, 26, 9, 0)
+                ));
+
+        mockMvc.perform(post("/invitations")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"targetValue":"new-resident@example.com","expiresAt":"2026-04-01T12:00:00"}
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(5L))
+                .andExpect(jsonPath("$.residenceId").value(12L))
+                .andExpect(jsonPath("$.token").value("invitation-token"));
     }
 
     @RestController

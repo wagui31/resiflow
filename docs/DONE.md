@@ -49,3 +49,11 @@
 - Ajout d'un filtre JWT qui lit le bearer token, valide le token et place l'utilisateur authentifié dans le contexte de sécurité.
 - Ajout d'un `PasswordEncoder` BCrypt et intégration du hashage lors de la création utilisateur et de la vérification lors du login.
 - Adaptation et ajout des tests pour couvrir le hashage des mots de passe et les règles principales de sécurité.
+
+### TASK-12
+- Ajout de l'entité `Invitation` avec les champs `residenceId`, `targetValue`, `token`, `status`, `expiresAt`, `createdBy` et `createdAt`.
+- Ajout du repository `InvitationRepository`, des DTO `CreateInvitationRequest` et `InvitationResponse`, et du service `InvitationService`.
+- Ajout du endpoint sécurisé `POST /invitations` qui crée une invitation pour la résidence de l'utilisateur authentifié.
+- Ajout des validations minimales sur la cible invitée, la date d'expiration et la présence du contexte utilisateur authentifié.
+- Ajout des tests unitaires contrôleur, service et sécurité pour couvrir la création d'invitation et la protection JWT du endpoint.
+- Exécution réussie de `./mvnw test`.
