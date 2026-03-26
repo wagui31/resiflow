@@ -3,16 +3,20 @@ package com.resiflow.service;
 import com.resiflow.dto.CreateInvitationRequest;
 import com.resiflow.dto.InvitationResponse;
 import com.resiflow.entity.Invitation;
+import com.resiflow.entity.UserRole;
 import com.resiflow.repository.InvitationRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.time.LocalDateTime;
+import java.util.NoSuchElementException;
 import java.util.UUID;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 @Service
 public class InvitationService {
 
     private static final String INITIAL_STATUS = "ACTIVE";
+    private static final String PENDING_STATUS = "PENDING_ADMIN_VALIDATION";
 
     private final InvitationRepository invitationRepository;
 
@@ -33,13 +37,37 @@ public class InvitationService {
         invitation.setResidenceId(authenticatedUser.residenceId());
         invitation.setTargetValue(request.getTargetValue().trim());
         invitation.setToken(UUID.randomUUID().toString());
-        invitation.setStatus(INITIAL_STATUS);
+        invitation.setStatus(resolveInitialStatus(authenticatedUser.role()));
         invitation.setExpiresAt(request.getExpiresAt());
         invitation.setCreatedBy(authenticatedUser.userId());
         invitation.setCreatedAt(now);
 
         Invitation savedInvitation = invitationRepository.save(invitation);
 
+        return new InvitationResponse(
+                savedInvitation.getId(),
+                savedInvitation.getResidenceId(),
+                savedInvitation.getTargetValue(),
+                savedInvitation.getToken(),
+                savedInvitation.getStatus(),
+                savedInvitation.getExpiresAt(),
+                savedInvitation.getCreatedBy(),
+                savedInvitation.getCreatedAt()
+        );
+    }
+
+    public InvitationResponse approveInvitation(final Long invitationId, final AuthenticatedUser authenticatedUser) {
+        validateAuthenticatedUser(authenticatedUser);
+
+        if (authenticatedUser.role() != UserRole.ADMIN) {
+            throw new AccessDeniedException("Only residence admins can approve invitations");
+        }
+
+        Invitation invitation = invitationRepository.findByIdAndResidenceId(invitationId, authenticatedUser.residenceId())
+                .orElseThrow(() -> new NoSuchElementException("Invitation not found in residence: " + invitationId));
+        invitation.setStatus(INITIAL_STATUS);
+
+        Invitation savedInvitation = invitationRepository.save(invitation);
         return new InvitationResponse(
                 savedInvitation.getId(),
                 savedInvitation.getResidenceId(),
@@ -77,6 +105,19 @@ public class InvitationService {
         if (authenticatedUser.residenceId() == null) {
             throw new IllegalArgumentException("Authenticated user residence ID must not be null");
         }
+        if (authenticatedUser.role() != UserRole.ADMIN && authenticatedUser.role() != UserRole.USER) {
+            throw new AccessDeniedException("Only residence members can create invitations");
+        }
+    }
+
+    private String resolveInitialStatus(final UserRole role) {
+        if (role == UserRole.ADMIN) {
+            return INITIAL_STATUS;
+        }
+        if (role == UserRole.USER) {
+            return PENDING_STATUS;
+        }
+        throw new AccessDeniedException("Only residence members can create invitations");
     }
 
     private boolean isBlank(final String value) {

@@ -3,6 +3,7 @@ package com.resiflow.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
+import com.resiflow.entity.UserRole;
 import com.resiflow.service.AuthService;
 import com.resiflow.service.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,7 +36,7 @@ class AuthControllerTest {
                 }
                 if ("resident@example.com".equals(request.getEmail().trim())
                         && "secret".equals(request.getPassword().trim())) {
-                    return new LoginResponse(1L, "resident@example.com", 7L, TOKEN);
+                    return new LoginResponse(1L, "resident@example.com", 7L, UserRole.USER, TOKEN);
                 }
                 throw new InvalidCredentialsException("Invalid credentials");
             }
@@ -59,6 +60,7 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.userId").value(1L))
                 .andExpect(jsonPath("$.email").value("resident@example.com"))
                 .andExpect(jsonPath("$.residenceId").value(7L))
+                .andExpect(jsonPath("$.role").value("USER"))
                 .andExpect(jsonPath("$.token").value(TOKEN));
     }
 

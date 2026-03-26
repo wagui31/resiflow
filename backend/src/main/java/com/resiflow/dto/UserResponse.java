@@ -1,31 +1,28 @@
 package com.resiflow.dto;
 
+import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
 
-public class LoginResponse {
+public class UserResponse {
 
-    private final Long userId;
+    private final Long id;
     private final String email;
     private final Long residenceId;
     private final UserRole role;
-    private final String token;
 
-    public LoginResponse(
-            final Long userId,
-            final String email,
-            final Long residenceId,
-            final UserRole role,
-            final String token
-    ) {
-        this.userId = userId;
+    public UserResponse(final Long id, final String email, final Long residenceId, final UserRole role) {
+        this.id = id;
         this.email = email;
         this.residenceId = residenceId;
         this.role = role;
-        this.token = token;
     }
 
-    public Long getUserId() {
-        return userId;
+    public static UserResponse fromUser(final User user) {
+        return new UserResponse(user.getId(), user.getEmail(), user.getResidenceId(), user.getRole());
+    }
+
+    public Long getId() {
+        return id;
     }
 
     public String getEmail() {
@@ -38,9 +35,5 @@ public class LoginResponse {
 
     public UserRole getRole() {
         return role;
-    }
-
-    public String getToken() {
-        return token;
     }
 }

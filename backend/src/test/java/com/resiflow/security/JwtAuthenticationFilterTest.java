@@ -46,7 +46,7 @@ class JwtAuthenticationFilterTest {
         when(jwtService.extractUserId("valid-token")).thenReturn(4L);
         when(jwtService.extractSubject("valid-token")).thenReturn("resident@example.com");
         when(jwtService.extractResidenceId("valid-token")).thenReturn(12L);
-        when(jwtService.extractRole("valid-token")).thenReturn(UserRole.RESIDENT);
+        when(jwtService.extractRole("valid-token")).thenReturn(UserRole.USER);
 
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.addHeader(AUTHORIZATION, "Bearer valid-token");
@@ -57,7 +57,7 @@ class JwtAuthenticationFilterTest {
 
         assertThat(SecurityContextHolder.getContext().getAuthentication()).isNotNull();
         assertThat(SecurityContextHolder.getContext().getAuthentication().getPrincipal())
-                .isEqualTo(new AuthenticatedUser(4L, "resident@example.com", 12L, UserRole.RESIDENT));
+                .isEqualTo(new AuthenticatedUser(4L, "resident@example.com", 12L, UserRole.USER));
     }
 
     @Test

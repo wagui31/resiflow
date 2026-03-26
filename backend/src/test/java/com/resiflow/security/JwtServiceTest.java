@@ -19,7 +19,7 @@ class JwtServiceTest {
         user.setId(4L);
         user.setEmail("resident@example.com");
         user.setResidenceId(12L);
-        user.setRole(UserRole.RESIDENT);
+        user.setRole(UserRole.USER);
 
         String token = jwtService.generateToken(user);
 
@@ -28,7 +28,7 @@ class JwtServiceTest {
         assertThat(jwtService.extractSubject(token)).isEqualTo("resident@example.com");
         assertThat(jwtService.extractUserId(token)).isEqualTo(4L);
         assertThat(jwtService.extractResidenceId(token)).isEqualTo(12L);
-        assertThat(jwtService.extractRole(token)).isEqualTo(UserRole.RESIDENT);
+        assertThat(jwtService.extractRole(token)).isEqualTo(UserRole.USER);
     }
 
     @Test

@@ -45,6 +45,24 @@ class InvitationServiceTest {
     }
 
     @Test
+    void createInvitationFromUserRequiresAdminValidation() {
+        AtomicReference<Invitation> savedInvitationRef = new AtomicReference<>();
+        InvitationService invitationService = new InvitationService(repositoryProxy(savedInvitationRef));
+
+        CreateInvitationRequest request = new CreateInvitationRequest();
+        request.setTargetValue(" resident@example.com ");
+        request.setExpiresAt(LocalDateTime.now().plusDays(3));
+
+        InvitationResponse response = invitationService.createInvitation(
+                request,
+                new AuthenticatedUser(9L, "user@example.com", 7L, UserRole.USER)
+        );
+
+        assertThat(savedInvitationRef.get().getStatus()).isEqualTo("PENDING_ADMIN_VALIDATION");
+        assertThat(response.getStatus()).isEqualTo("PENDING_ADMIN_VALIDATION");
+    }
+
+    @Test
     void createInvitationRejectsBlankTargetValue() {
         InvitationService invitationService = new InvitationService(repositoryProxy(new AtomicReference<>()));
 

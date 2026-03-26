@@ -7,6 +7,7 @@ import com.resiflow.dto.LoginResponse;
 import com.resiflow.controller.AuthController;
 import com.resiflow.controller.HealthController;
 import com.resiflow.controller.InvitationController;
+import com.resiflow.controller.ResidenceController;
 import com.resiflow.controller.UserController;
 import com.resiflow.dto.InvitationResponse;
 import com.resiflow.entity.User;
@@ -45,6 +46,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
         AuthController.class,
         UserController.class,
         InvitationController.class,
+        ResidenceController.class,
         SecurityConfigTest.TestProtectedController.class
 })
 @Import({
@@ -77,6 +79,9 @@ class SecurityConfigTest {
     @MockitoBean
     private InvitationService invitationService;
 
+    @MockitoBean
+    private com.resiflow.service.ResidenceService residenceService;
+
     @Test
     void healthEndpointIsPublic() throws Exception {
         mockMvc.perform(get("/health"))
@@ -91,7 +96,7 @@ class SecurityConfigTest {
         request.setPassword("secret");
 
         when(authService.login(any(LoginRequest.class)))
-                .thenReturn(new LoginResponse(4L, "resident@example.com", 12L, "jwt-token"));
+                .thenReturn(new LoginResponse(4L, "resident@example.com", 12L, UserRole.USER, "jwt-token"));
 
         mockMvc.perform(post("/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -103,17 +108,26 @@ class SecurityConfigTest {
     }
 
     @Test
-    void createUserEndpointIsPublic() throws Exception {
+    void createUserEndpointRequiresAdminToken() throws Exception {
         User user = new User();
         user.setId(1L);
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
         user.setResidenceId(7L);
-        user.setRole(UserRole.RESIDENT);
+        user.setRole(UserRole.USER);
 
-        when(userService.createUser(any(CreateUserRequest.class))).thenReturn(user);
+        User admin = new User();
+        admin.setId(9L);
+        admin.setEmail("admin@example.com");
+        admin.setResidenceId(7L);
+        admin.setRole(UserRole.ADMIN);
+
+        String token = jwtService.generateToken(admin);
+
+        when(userService.createResidenceUser(any(CreateUserRequest.class), any())).thenReturn(user);
 
         mockMvc.perform(post("/users")
+                        .header("Authorization", "Bearer " + token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {"email":"resident@example.com","password":"secret","residenceId":7}
@@ -144,7 +158,7 @@ class SecurityConfigTest {
         user.setId(4L);
         user.setEmail("resident@example.com");
         user.setResidenceId(12L);
-        user.setRole(UserRole.RESIDENT);
+        user.setRole(UserRole.USER);
 
         String token = jwtService.generateToken(user);
 
@@ -155,14 +169,26 @@ class SecurityConfigTest {
     }
 
     @Test
-    void invitationEndpointRejectsResidentBearerToken() throws Exception {
+    void invitationEndpointAcceptsUserBearerTokenWithPendingStatus() throws Exception {
         User user = new User();
         user.setId(4L);
         user.setEmail("resident@example.com");
         user.setResidenceId(12L);
-        user.setRole(UserRole.RESIDENT);
+        user.setRole(UserRole.USER);
 
         String token = jwtService.generateToken(user);
+
+        when(invitationService.createInvitation(any(CreateInvitationRequest.class), any()))
+                .thenReturn(new InvitationResponse(
+                        5L,
+                        12L,
+                        "new-resident@example.com",
+                        "invitation-token",
+                        "PENDING_ADMIN_VALIDATION",
+                        LocalDateTime.of(2026, 4, 1, 12, 0),
+                        4L,
+                        LocalDateTime.of(2026, 3, 26, 9, 0)
+                ));
 
         mockMvc.perform(post("/invitations")
                         .header("Authorization", "Bearer " + token)
@@ -170,7 +196,8 @@ class SecurityConfigTest {
                         .content("""
                                 {"targetValue":"new-resident@example.com","expiresAt":"2026-04-01T12:00:00"}
                                 """))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.status").value("PENDING_ADMIN_VALIDATION"));
     }
 
     @Test

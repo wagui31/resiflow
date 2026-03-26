@@ -15,8 +15,44 @@
       "enabled": true
     },
     {
+      "key": "super_admin_token",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "admin_token",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "user_token",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
       "key": "residence_id",
       "value": "1",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "super_admin_email",
+      "value": "superadmin@example.com",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "super_admin_password",
+      "value": "secret",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "super_admin_user_id",
+      "value": "",
       "type": "default",
       "enabled": true
     },
@@ -39,19 +75,43 @@
       "enabled": true
     },
     {
-      "key": "resident_email",
+      "key": "user_email",
       "value": "",
       "type": "default",
       "enabled": true
     },
     {
-      "key": "resident_password",
+      "key": "user_password",
       "value": "secret123",
       "type": "default",
       "enabled": true
     },
     {
-      "key": "resident_user_id",
+      "key": "user_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "residence_name",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "residence_address",
+      "value": "10 rue de la Residence, Paris",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "pending_invitation_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "pending_invitation_token",
       "value": "",
       "type": "default",
       "enabled": true

@@ -7,7 +7,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.FetchType;
 
 @Entity
 @Table(name = "users")
@@ -23,8 +26,9 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private Long residenceId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "residence_id")
+    private Residence residence;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -54,12 +58,27 @@ public class User {
         this.password = password;
     }
 
+    public Residence getResidence() {
+        return residence;
+    }
+
+    public void setResidence(final Residence residence) {
+        this.residence = residence;
+    }
+
     public Long getResidenceId() {
-        return residenceId;
+        return residence == null ? null : residence.getId();
     }
 
     public void setResidenceId(final Long residenceId) {
-        this.residenceId = residenceId;
+        if (residenceId == null) {
+            this.residence = null;
+            return;
+        }
+
+        Residence residenceReference = new Residence();
+        residenceReference.setId(residenceId);
+        this.residence = residenceReference;
     }
 
     public UserRole getRole() {

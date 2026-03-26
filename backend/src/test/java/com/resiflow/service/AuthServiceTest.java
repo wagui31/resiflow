@@ -28,7 +28,7 @@ class AuthServiceTest {
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
         user.setResidenceId(12L);
-        user.setRole(UserRole.RESIDENT);
+        user.setRole(UserRole.USER);
 
         JwtService jwtService = new JwtService(new JwtProperties(SECRET, 3600000));
         AuthService authService = new AuthService(repositoryProxy(Optional.of(user)), jwtService, passwordEncoder);
@@ -42,6 +42,7 @@ class AuthServiceTest {
         assertThat(response.getUserId()).isEqualTo(4L);
         assertThat(response.getEmail()).isEqualTo("resident@example.com");
         assertThat(response.getResidenceId()).isEqualTo(12L);
+        assertThat(response.getRole()).isEqualTo(UserRole.USER);
         assertThat(response.getToken()).isNotBlank();
         assertThat(jwtService.extractSubject(response.getToken())).isEqualTo("resident@example.com");
     }
@@ -115,7 +116,7 @@ class AuthServiceTest {
         User user = new User();
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
-        user.setRole(UserRole.RESIDENT);
+        user.setRole(UserRole.USER);
 
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.of(user)),
