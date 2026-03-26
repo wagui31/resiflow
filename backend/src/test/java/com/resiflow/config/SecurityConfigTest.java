@@ -10,6 +10,7 @@ import com.resiflow.controller.InvitationController;
 import com.resiflow.controller.UserController;
 import com.resiflow.dto.InvitationResponse;
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
 import com.resiflow.security.JwtAuthenticationFilter;
 import com.resiflow.security.JwtProperties;
 import com.resiflow.security.JwtService;
@@ -108,6 +109,7 @@ class SecurityConfigTest {
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
         user.setResidenceId(7L);
+        user.setRole(UserRole.RESIDENT);
 
         when(userService.createUser(any(CreateUserRequest.class))).thenReturn(user);
 
@@ -142,6 +144,7 @@ class SecurityConfigTest {
         user.setId(4L);
         user.setEmail("resident@example.com");
         user.setResidenceId(12L);
+        user.setRole(UserRole.RESIDENT);
 
         String token = jwtService.generateToken(user);
 
@@ -152,11 +155,31 @@ class SecurityConfigTest {
     }
 
     @Test
-    void invitationEndpointAcceptsValidBearerToken() throws Exception {
+    void invitationEndpointRejectsResidentBearerToken() throws Exception {
         User user = new User();
         user.setId(4L);
         user.setEmail("resident@example.com");
         user.setResidenceId(12L);
+        user.setRole(UserRole.RESIDENT);
+
+        String token = jwtService.generateToken(user);
+
+        mockMvc.perform(post("/invitations")
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"targetValue":"new-resident@example.com","expiresAt":"2026-04-01T12:00:00"}
+                                """))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void invitationEndpointAcceptsAdminBearerToken() throws Exception {
+        User user = new User();
+        user.setId(4L);
+        user.setEmail("admin@example.com");
+        user.setResidenceId(12L);
+        user.setRole(UserRole.ADMIN);
 
         String token = jwtService.generateToken(user);
 

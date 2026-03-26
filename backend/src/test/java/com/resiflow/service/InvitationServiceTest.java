@@ -3,6 +3,7 @@ package com.resiflow.service;
 import com.resiflow.dto.CreateInvitationRequest;
 import com.resiflow.dto.InvitationResponse;
 import com.resiflow.entity.Invitation;
+import com.resiflow.entity.UserRole;
 import com.resiflow.repository.InvitationRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.lang.reflect.Proxy;
@@ -24,7 +25,7 @@ class InvitationServiceTest {
         request.setTargetValue(" resident@example.com ");
         request.setExpiresAt(LocalDateTime.now().plusDays(3));
 
-        AuthenticatedUser authenticatedUser = new AuthenticatedUser(9L, "admin@example.com", 7L);
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(9L, "admin@example.com", 7L, UserRole.ADMIN);
 
         InvitationResponse response = invitationService.createInvitation(request, authenticatedUser);
 
@@ -51,7 +52,10 @@ class InvitationServiceTest {
         request.setTargetValue(" ");
         request.setExpiresAt(LocalDateTime.now().plusDays(1));
 
-        assertThatThrownBy(() -> invitationService.createInvitation(request, new AuthenticatedUser(1L, "admin@example.com", 7L)))
+        assertThatThrownBy(() -> invitationService.createInvitation(
+                request,
+                new AuthenticatedUser(1L, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Target value must not be blank");
     }
@@ -64,7 +68,10 @@ class InvitationServiceTest {
         request.setTargetValue("resident@example.com");
         request.setExpiresAt(LocalDateTime.now().minusMinutes(1));
 
-        assertThatThrownBy(() -> invitationService.createInvitation(request, new AuthenticatedUser(1L, "admin@example.com", 7L)))
+        assertThatThrownBy(() -> invitationService.createInvitation(
+                request,
+                new AuthenticatedUser(1L, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Expiration date must be in the future");
     }
@@ -77,7 +84,10 @@ class InvitationServiceTest {
         request.setTargetValue("resident@example.com");
         request.setExpiresAt(LocalDateTime.now().plusDays(1));
 
-        assertThatThrownBy(() -> invitationService.createInvitation(request, new AuthenticatedUser(1L, "admin@example.com", null)))
+        assertThatThrownBy(() -> invitationService.createInvitation(
+                request,
+                new AuthenticatedUser(1L, "admin@example.com", null, UserRole.ADMIN)
+        ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Authenticated user residence ID must not be null");
     }

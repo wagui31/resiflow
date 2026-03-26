@@ -3,6 +3,7 @@ package com.resiflow.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resiflow.dto.CreateInvitationRequest;
 import com.resiflow.dto.InvitationResponse;
+import com.resiflow.entity.UserRole;
 import com.resiflow.security.AuthenticatedUser;
 import com.resiflow.service.InvitationService;
 import java.time.LocalDateTime;
@@ -61,7 +62,7 @@ class InvitationControllerTest {
         request.setExpiresAt(LocalDateTime.of(2026, 4, 1, 12, 0));
 
         mockMvc.perform(post("/invitations")
-                        .with(authenticatedUser(new AuthenticatedUser(9L, "admin@example.com", 7L)))
+                        .with(authenticatedUser(new AuthenticatedUser(9L, "admin@example.com", 7L, UserRole.ADMIN)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isCreated())
@@ -80,7 +81,7 @@ class InvitationControllerTest {
         request.setExpiresAt(LocalDateTime.of(2026, 4, 1, 12, 0));
 
         mockMvc.perform(post("/invitations")
-                        .with(authenticatedUser(new AuthenticatedUser(9L, "admin@example.com", 7L)))
+                        .with(authenticatedUser(new AuthenticatedUser(9L, "admin@example.com", 7L, UserRole.ADMIN)))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())

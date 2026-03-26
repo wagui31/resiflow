@@ -2,6 +2,8 @@ package com.resiflow.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -23,6 +25,10 @@ public class User {
 
     @Column(nullable = false)
     private Long residenceId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role;
 
     public Long getId() {
         return id;
@@ -54,5 +60,13 @@ public class User {
 
     public void setResidenceId(final Long residenceId) {
         this.residenceId = residenceId;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(final UserRole role) {
+        this.role = role;
     }
 }

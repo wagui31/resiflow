@@ -3,6 +3,7 @@ package com.resiflow.service;
 import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.JwtProperties;
 import com.resiflow.security.JwtService;
@@ -27,6 +28,7 @@ class AuthServiceTest {
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
         user.setResidenceId(12L);
+        user.setRole(UserRole.RESIDENT);
 
         JwtService jwtService = new JwtService(new JwtProperties(SECRET, 3600000));
         AuthService authService = new AuthService(repositoryProxy(Optional.of(user)), jwtService, passwordEncoder);
@@ -83,6 +85,7 @@ class AuthServiceTest {
         User user = new User();
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
+        user.setRole(UserRole.RESIDENT);
 
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.of(user)),

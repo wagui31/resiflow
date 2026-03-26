@@ -1,6 +1,7 @@
 package com.resiflow.security;
 
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -29,6 +30,7 @@ public class JwtService {
                 .subject(user.getEmail())
                 .claim("userId", user.getId())
                 .claim("residenceId", user.getResidenceId())
+                .claim("role", user.getRole().name())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiration))
                 .signWith(signingKey)
@@ -45,6 +47,10 @@ public class JwtService {
 
     public Long extractResidenceId(final String token) {
         return parseClaims(token).get("residenceId", Long.class);
+    }
+
+    public UserRole extractRole(final String token) {
+        return UserRole.valueOf(parseClaims(token).get("role", String.class));
     }
 
     public boolean isTokenValid(final String token) {

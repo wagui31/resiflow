@@ -57,3 +57,10 @@
 - Ajout des validations minimales sur la cible invitée, la date d'expiration et la présence du contexte utilisateur authentifié.
 - Ajout des tests unitaires contrôleur, service et sécurité pour couvrir la création d'invitation et la protection JWT du endpoint.
 - Exécution réussie de `./mvnw test`.
+
+### TASK-13
+- Ajout du rôle utilisateur `ADMIN` ou `RESIDENT` via l'enum `UserRole` et stockage du rôle sur l'entité `User`.
+- Attribution par défaut du rôle `RESIDENT` lors de la création d'un utilisateur.
+- Ajout du rôle dans le JWT et dans le contexte de sécurité via `AuthenticatedUser`, avec autorités Spring `ROLE_*`.
+- Restriction de `POST /invitations` aux seuls utilisateurs ayant le rôle `ADMIN`.
+- Adaptation des tests unitaires et de sécurité pour couvrir la persistance du rôle, son transport dans le JWT et le contrôle d'accès admin.

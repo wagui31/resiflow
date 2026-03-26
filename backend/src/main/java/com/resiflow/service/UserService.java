@@ -2,6 +2,7 @@ package com.resiflow.service;
 
 import com.resiflow.dto.CreateUserRequest;
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
 import com.resiflow.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -24,6 +25,7 @@ public class UserService {
         user.setEmail(request.getEmail().trim());
         user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         user.setResidenceId(request.getResidenceId());
+        user.setRole(UserRole.RESIDENT);
 
         return userRepository.save(user);
     }

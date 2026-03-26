@@ -2,6 +2,7 @@ package com.resiflow.service;
 
 import com.resiflow.dto.CreateUserRequest;
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
 import com.resiflow.repository.UserRepository;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.atomic.AtomicReference;
@@ -33,6 +34,7 @@ class UserServiceTest {
         assertThat(userToSave.getEmail()).isEqualTo("resident@example.com");
         assertThat(passwordEncoder.matches("secret", userToSave.getPassword())).isTrue();
         assertThat(userToSave.getResidenceId()).isEqualTo(7L);
+        assertThat(userToSave.getRole()).isEqualTo(UserRole.RESIDENT);
         assertThat(result.getId()).isEqualTo(1L);
     }
 
@@ -77,6 +79,7 @@ class UserServiceTest {
                         savedUser.setEmail(user.getEmail());
                         savedUser.setPassword(user.getPassword());
                         savedUser.setResidenceId(user.getResidenceId());
+                        savedUser.setRole(user.getRole());
                         return savedUser;
                     }
                     if ("toString".equals(method.getName())) {

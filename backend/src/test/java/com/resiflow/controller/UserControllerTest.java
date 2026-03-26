@@ -3,6 +3,7 @@ package com.resiflow.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resiflow.dto.CreateUserRequest;
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
 import com.resiflow.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +37,7 @@ class UserControllerTest {
                 user.setEmail(request.getEmail().trim());
                 user.setPassword(request.getPassword().trim());
                 user.setResidenceId(request.getResidenceId());
+                user.setRole(UserRole.RESIDENT);
                 return user;
             }
         };
@@ -57,7 +59,8 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.id").value(1L))
                 .andExpect(jsonPath("$.email").value("resident@example.com"))
                 .andExpect(jsonPath("$.password").value("secret"))
-                .andExpect(jsonPath("$.residenceId").value(7L));
+                .andExpect(jsonPath("$.residenceId").value(7L))
+                .andExpect(jsonPath("$.role").value("RESIDENT"));
     }
 
     @Test
