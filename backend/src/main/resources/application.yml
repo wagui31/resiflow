@@ -5,6 +5,11 @@ spring:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/resiflow}
     username: ${SPRING_DATASOURCE_USERNAME:resiflow}
     password: ${SPRING_DATASOURCE_PASSWORD:resiflow}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
 
 app:
   jwt:

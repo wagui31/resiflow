@@ -64,3 +64,9 @@
 - Ajout du rôle dans le JWT et dans le contexte de sécurité via `AuthenticatedUser`, avec autorités Spring `ROLE_*`.
 - Restriction de `POST /invitations` aux seuls utilisateurs ayant le rôle `ADMIN`.
 - Adaptation des tests unitaires et de sécurité pour couvrir la persistance du rôle, son transport dans le JWT et le contrôle d'accès admin.
+
+### TASK-15
+- Ajout de la dépendance `flyway-core` au backend Spring Boot.
+- Activation explicite de Flyway et passage de Hibernate en mode `validate` pour s'appuyer sur les migrations SQL.
+- Ajout de la migration initiale `V1__init_schema.sql` pour créer les tables `residences`, `users` et `invitations` selon les entités existantes.
+- Vérification par exécution des tests backend.
