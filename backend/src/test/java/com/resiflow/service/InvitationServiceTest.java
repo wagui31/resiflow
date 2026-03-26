@@ -61,6 +61,33 @@ class InvitationServiceTest {
     }
 
     @Test
+    void createInvitationRejectsNullRequest() {
+        InvitationService invitationService = new InvitationService(repositoryProxy(new AtomicReference<>()));
+
+        assertThatThrownBy(() -> invitationService.createInvitation(
+                null,
+                new AuthenticatedUser(1L, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Create invitation request must not be null");
+    }
+
+    @Test
+    void createInvitationRejectsMissingExpirationDate() {
+        InvitationService invitationService = new InvitationService(repositoryProxy(new AtomicReference<>()));
+
+        CreateInvitationRequest request = new CreateInvitationRequest();
+        request.setTargetValue("resident@example.com");
+
+        assertThatThrownBy(() -> invitationService.createInvitation(
+                request,
+                new AuthenticatedUser(1L, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Expiration date must not be null");
+    }
+
+    @Test
     void createInvitationRejectsPastExpirationDate() {
         InvitationService invitationService = new InvitationService(repositoryProxy(new AtomicReference<>()));
 
@@ -90,6 +117,35 @@ class InvitationServiceTest {
         ))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Authenticated user residence ID must not be null");
+    }
+
+    @Test
+    void createInvitationRejectsNullAuthenticatedUser() {
+        InvitationService invitationService = new InvitationService(repositoryProxy(new AtomicReference<>()));
+
+        CreateInvitationRequest request = new CreateInvitationRequest();
+        request.setTargetValue("resident@example.com");
+        request.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        assertThatThrownBy(() -> invitationService.createInvitation(request, null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Authenticated user must not be null");
+    }
+
+    @Test
+    void createInvitationRejectsMissingAuthenticatedUserId() {
+        InvitationService invitationService = new InvitationService(repositoryProxy(new AtomicReference<>()));
+
+        CreateInvitationRequest request = new CreateInvitationRequest();
+        request.setTargetValue("resident@example.com");
+        request.setExpiresAt(LocalDateTime.now().plusDays(1));
+
+        assertThatThrownBy(() -> invitationService.createInvitation(
+                request,
+                new AuthenticatedUser(null, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Authenticated user ID must not be null");
     }
 
     private InvitationRepository repositoryProxy(final AtomicReference<Invitation> savedInvitationRef) {

@@ -64,6 +64,36 @@ class AuthServiceTest {
     }
 
     @Test
+    void loginRejectsNullRequest() {
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.empty()),
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder
+        );
+
+        assertThatThrownBy(() -> authService.login(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Login request must not be null");
+    }
+
+    @Test
+    void loginRejectsBlankPassword() {
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.empty()),
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder
+        );
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("resident@example.com");
+        request.setPassword(" ");
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password must not be blank");
+    }
+
+    @Test
     void loginRejectsUnknownEmail() {
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.empty()),

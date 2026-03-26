@@ -5,6 +5,7 @@ import com.resiflow.entity.UserRole;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class JwtServiceTest {
 
@@ -28,5 +29,13 @@ class JwtServiceTest {
         assertThat(jwtService.extractUserId(token)).isEqualTo(4L);
         assertThat(jwtService.extractResidenceId(token)).isEqualTo(12L);
         assertThat(jwtService.extractRole(token)).isEqualTo(UserRole.RESIDENT);
+    }
+
+    @Test
+    void isTokenValidRejectsMalformedToken() {
+        JwtService jwtService = new JwtService(new JwtProperties(SECRET, 3600000));
+
+        assertThatThrownBy(() -> jwtService.isTokenValid("not-a-jwt"))
+                .isInstanceOf(RuntimeException.class);
     }
 }

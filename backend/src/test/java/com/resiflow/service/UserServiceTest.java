@@ -53,6 +53,29 @@ class UserServiceTest {
     }
 
     @Test
+    void createUserRejectsNullRequest() {
+        UserService userService = new UserService(repositoryProxy(new AtomicReference<>()), passwordEncoder);
+
+        assertThatThrownBy(() -> userService.createUser(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Create user request must not be null");
+    }
+
+    @Test
+    void createUserRejectsBlankPassword() {
+        UserService userService = new UserService(repositoryProxy(new AtomicReference<>()), passwordEncoder);
+
+        CreateUserRequest request = new CreateUserRequest();
+        request.setEmail("resident@example.com");
+        request.setPassword(" ");
+        request.setResidenceId(7L);
+
+        assertThatThrownBy(() -> userService.createUser(request))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Password must not be blank");
+    }
+
+    @Test
     void createUserRejectsNullResidenceId() {
         UserService userService = new UserService(repositoryProxy(new AtomicReference<>()), passwordEncoder);
 
