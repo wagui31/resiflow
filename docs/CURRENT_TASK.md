@@ -1,2 +1,2 @@
-# TASK-15 Flyway
-Ajouter migration DB
+# TASK-16 Logging
+Configurer logs

@@ -11,6 +11,13 @@ spring:
   flyway:
     enabled: true
 
+logging:
+  level:
+    root: INFO
+    com.resiflow: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} %-5level [%thread] %logger{36} - %msg%n"
+
 app:
   jwt:
     secret: ${APP_JWT_SECRET:Zm9yLWRldmVsb3BtZW50LW9ubHktcmVzaWZsb3ctand0LXNlY3JldC1rZXktMzItYnl0ZXM=}
