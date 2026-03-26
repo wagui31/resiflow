@@ -1,0 +1,472 @@
+{
+  "info": {
+    "_postman_id": "4e6ea837-3b7e-4c52-a350-d9600d5ea9e6",
+    "name": "Resiflow API",
+    "description": "Collection Postman generee depuis les controllers backend Resiflow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "01 - Health Check",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            },
+            "description": "GET {{base_url}}/api/health"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response body is OK\", function () {",
+                  "    pm.expect(pm.response.text()).to.eql(\"OK\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "description": "POST {{base_url}}/api/auth/login"
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains token and user context\", function () {",
+                  "    pm.expect(json.token).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(json.userId).to.exist;",
+                  "    pm.expect(json.residenceId).to.exist;",
+                  "    pm.expect(json.email).to.be.a(\"string\").and.not.empty;",
+                  "});",
+                  "",
+                  "pm.environment.set(\"token\", json.token);",
+                  "pm.environment.set(\"admin_user_id\", json.userId);",
+                  "pm.environment.set(\"admin_email\", json.email);",
+                  "pm.environment.set(\"residence_id\", json.residenceId);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Users / Admins",
+      "item": [
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"resident_email\")) {",
+                  "    pm.environment.set(\"resident_email\", \"resident+\" + Date.now() + \"@example.com\");",
+                  "}",
+                  "",
+                  "if (!pm.environment.get(\"resident_password\")) {",
+                  "    pm.environment.set(\"resident_password\", \"secret123\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains created user data\", function () {",
+                  "    pm.expect(json.id).to.exist;",
+                  "    pm.expect(json.email).to.eql(pm.environment.get(\"resident_email\"));",
+                  "    pm.expect(json.residenceId).to.eql(Number(pm.environment.get(\"residence_id\")));",
+                  "    pm.expect(json.role).to.eql(\"RESIDENT\");",
+                  "});",
+                  "",
+                  "pm.environment.set(\"resident_user_id\", json.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{resident_email}}\",\n  \"password\": \"{{resident_password}}\",\n  \"residenceId\": {{residence_id}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            },
+            "description": "POST {{base_url}}/api/users"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "04 - Invitations / Residents",
+      "item": [
+        {
+          "name": "Create Invitation",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.environment.get(\"target_email\")) {",
+                  "    pm.environment.set(\"target_email\", \"invite+\" + Date.now() + \"@example.com\");",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "var json = pm.response.json();",
+                  "",
+                  "pm.test(\"Response contains created invitation\", function () {",
+                  "    pm.expect(json.id).to.exist;",
+                  "    pm.expect(json.targetValue).to.eql(pm.environment.get(\"target_email\"));",
+                  "    pm.expect(json.token).to.be.a(\"string\").and.not.empty;",
+                  "    pm.expect(json.status).to.eql(\"ACTIVE\");",
+                  "    pm.expect(json.residenceId).to.eql(Number(pm.environment.get(\"residence_id\")));",
+                  "});",
+                  "",
+                  "pm.environment.set(\"invitation_id\", json.id);",
+                  "pm.environment.set(\"invitation_token\", json.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetValue\": \"{{target_email}}\",\n  \"expiresAt\": \"2030-12-31T23:59:59\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/invitations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "invitations"
+              ]
+            },
+            "description": "POST {{base_url}}/api/invitations"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "05 - Scenarios",
+      "item": [
+        {
+          "name": "Scenario - Admin Login -> Create Resident -> Create Invitation",
+          "item": [
+            {
+              "name": "Step 1 - Login Admin",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{admin_email}}\",\n  \"password\": \"{{admin_password}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/auth/login",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "auth",
+                    "login"
+                  ]
+                },
+                "description": "Scenario step 1: authenticate an existing admin."
+              },
+              "response": [],
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 200\", function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "var json = pm.response.json();",
+                      "pm.environment.set(\"token\", json.token);",
+                      "pm.environment.set(\"admin_user_id\", json.userId);",
+                      "pm.environment.set(\"residence_id\", json.residenceId);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Step 2 - Create Resident",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set(\"resident_email\", \"resident+\" + Date.now() + \"@example.com\");",
+                      "if (!pm.environment.get(\"resident_password\")) {",
+                      "    pm.environment.set(\"resident_password\", \"secret123\");",
+                      "}"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var json = pm.response.json();",
+                      "pm.environment.set(\"resident_user_id\", json.id);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{resident_email}}\",\n  \"password\": \"{{resident_password}}\",\n  \"residenceId\": {{residence_id}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/users",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "users"
+                  ]
+                },
+                "description": "Scenario step 2: create a resident linked to the admin residence."
+              },
+              "response": []
+            },
+            {
+              "name": "Step 3 - Create Invitation",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.environment.set(\"target_email\", pm.environment.get(\"resident_email\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"Status code is 201\", function () {",
+                      "    pm.response.to.have.status(201);",
+                      "});",
+                      "",
+                      "var json = pm.response.json();",
+                      "pm.environment.set(\"invitation_id\", json.id);",
+                      "pm.environment.set(\"invitation_token\", json.token);"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"targetValue\": \"{{target_email}}\",\n  \"expiresAt\": \"2030-12-31T23:59:59\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/api/invitations",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "api",
+                    "invitations"
+                  ]
+                },
+                "description": "Scenario step 3: create an invitation for the newly created resident email."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": []
+}
