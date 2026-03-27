@@ -255,7 +255,7 @@ public class VoteService {
         try {
             return VoteChoix.valueOf(rawChoix.trim().toUpperCase());
         } catch (IllegalArgumentException exception) {
-            throw new IllegalArgumentException("Vote choice must be POUR or CONTRE");
+            throw new IllegalArgumentException("Vote choice must be POUR, CONTRE or NEUTRE");
         }
     }
 
@@ -289,7 +289,8 @@ public class VoteService {
     private VoteResultResponse buildResult(final Vote vote) {
         long totalPour = voteUtilisateurRepository.countByVote_IdAndChoix(vote.getId(), VoteChoix.POUR);
         long totalContre = voteUtilisateurRepository.countByVote_IdAndChoix(vote.getId(), VoteChoix.CONTRE);
-        return new VoteResultResponse(vote.getId(), totalPour, totalContre, vote.getStatut());
+        long totalNeutre = voteUtilisateurRepository.countByVote_IdAndChoix(vote.getId(), VoteChoix.NEUTRE);
+        return new VoteResultResponse(vote.getId(), totalPour, totalContre, totalNeutre, vote.getStatut());
     }
 
     private boolean isBlank(final String value) {

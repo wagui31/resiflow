@@ -7,12 +7,20 @@ public class VoteResultResponse {
     private final Long voteId;
     private final long totalPour;
     private final long totalContre;
+    private final long totalNeutre;
     private final VoteStatut statut;
 
-    public VoteResultResponse(final Long voteId, final long totalPour, final long totalContre, final VoteStatut statut) {
+    public VoteResultResponse(
+            final Long voteId,
+            final long totalPour,
+            final long totalContre,
+            final long totalNeutre,
+            final VoteStatut statut
+    ) {
         this.voteId = voteId;
         this.totalPour = totalPour;
         this.totalContre = totalContre;
+        this.totalNeutre = totalNeutre;
         this.statut = statut;
     }
 
@@ -26,6 +34,10 @@ public class VoteResultResponse {
 
     public long getTotalContre() {
         return totalContre;
+    }
+
+    public long getTotalNeutre() {
+        return totalNeutre;
     }
 
     public VoteStatut getStatut() {
