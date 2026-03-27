@@ -5,6 +5,7 @@ import com.resiflow.entity.Depense;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.StatutDepense;
 import com.resiflow.entity.User;
+import com.resiflow.entity.Vote;
 import com.resiflow.repository.DepenseRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.time.LocalDateTime;
@@ -82,6 +83,28 @@ public class DepenseService {
     public List<Depense> getDepensesByResidence(final Long residenceId, final AuthenticatedUser authenticatedUser) {
         residenceAccessService.getResidenceForMember(residenceId, authenticatedUser);
         return depenseRepository.findAllByResidence_IdOrderByDateCreationDesc(residenceId);
+    }
+
+    @Transactional
+    public Depense createDepenseFromVote(final Vote vote, final java.math.BigDecimal montant, final User actor) {
+        if (vote == null) {
+            throw new IllegalArgumentException("Vote must not be null");
+        }
+        if (montant == null || montant.signum() <= 0) {
+            throw new IllegalArgumentException("Depense montant must be greater than zero");
+        }
+        if (actor == null) {
+            throw new IllegalArgumentException("Actor must not be null");
+        }
+
+        Depense depense = new Depense();
+        depense.setResidence(vote.getResidence());
+        depense.setMontant(montant);
+        depense.setDescription(vote.getTitre().trim());
+        depense.setStatut(StatutDepense.EN_ATTENTE);
+        depense.setCreePar(actor);
+        depense.setDateCreation(LocalDateTime.now());
+        return depenseRepository.save(depense);
     }
 
     private Depense getRequiredDepense(final Long depenseId) {

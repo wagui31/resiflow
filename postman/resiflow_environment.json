@@ -133,6 +133,48 @@
       "value": "",
       "type": "default",
       "enabled": true
+    },
+    {
+      "key": "vote_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "vote_delete_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "vote_depense_id",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "vote_title",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "vote_date_debut",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "vote_date_fin",
+      "value": "",
+      "type": "default",
+      "enabled": true
+    },
+    {
+      "key": "vote_reopen_date_fin",
+      "value": "",
+      "type": "default",
+      "enabled": true
     }
   ],
   "_postman_variable_scope": "environment",

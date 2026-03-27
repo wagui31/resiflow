@@ -1,0 +1,35 @@
+package com.resiflow.dto;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+public class VoteActionRequest {
+
+    private String choix;
+    private LocalDateTime nouvelleDateFin;
+    private BigDecimal montant;
+
+    public String getChoix() {
+        return choix;
+    }
+
+    public void setChoix(final String choix) {
+        this.choix = choix;
+    }
+
+    public LocalDateTime getNouvelleDateFin() {
+        return nouvelleDateFin;
+    }
+
+    public void setNouvelleDateFin(final LocalDateTime nouvelleDateFin) {
+        this.nouvelleDateFin = nouvelleDateFin;
+    }
+
+    public BigDecimal getMontant() {
+        return montant;
+    }
+
+    public void setMontant(final BigDecimal montant) {
+        this.montant = montant;
+    }
+}

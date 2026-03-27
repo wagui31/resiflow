@@ -24,6 +24,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 						+ "org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration",
 				"app.jwt.secret=Zm9yLXRlc3RzLW9ubHktcmVzaWZsb3ctand0LXNlY3JldC1rZXktMzItYnl0ZXM=",
 				"app.jwt.expiration-ms=3600000",
+				"app.votes.scheduler.enabled=false",
 				"spring.main.lazy-initialization=true"
 		}
 )

@@ -972,6 +972,351 @@
           }
         }
       ]
+    },
+    {
+      "name": "Votes",
+      "item": [
+        {
+          "name": "Create Vote",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var now = new Date();",
+                  "var end = new Date(now.getTime() + 24 * 60 * 60 * 1000);",
+                  "var reopen = new Date(now.getTime() + 48 * 60 * 60 * 1000);",
+                  "pm.environment.set('voteTitre', 'Vote travaux ' + Date.now());",
+                  "pm.environment.set('voteDateDebut', now.toISOString());",
+                  "pm.environment.set('voteDateFin', end.toISOString());",
+                  "pm.environment.set('voteReopenDateFin', reopen.toISOString());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create vote status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('voteId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"residenceId\": {{residenceId}},\n  \"titre\": \"{{voteTitre}}\",\n  \"description\": \"Vote pour valider une depense future\",\n  \"montantEstime\": 150.00,\n  \"dateDebut\": \"{{voteDateDebut}}\",\n  \"dateFin\": \"{{voteDateFin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/votes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Votes By Residence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/residence/{{residenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "residence",
+                "{{residenceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Vote",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Vote POUR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"choix\": \"POUR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteId}}/voter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteId}}",
+                "voter"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reopen Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nouvelleDateFin\": \"{{voteReopenDateFin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteId}}/reouvrir",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteId}}",
+                "reouvrir"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Close Vote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteId}}/cloturer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteId}}",
+                "cloturer"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Vote Result",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteId}}/resultat",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteId}}",
+                "resultat"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Depense From Vote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create depense from vote status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('voteDepenseId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 175.00\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteId}}/creer-depense",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteId}}",
+                "creer-depense"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Vote To Delete",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create vote to delete status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('voteDeleteId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"residenceId\": {{residenceId}},\n  \"titre\": \"Vote a supprimer {{voteTitre}}\",\n  \"description\": \"Vote temporaire pour tester la suppression\",\n  \"montantEstime\": 90.00,\n  \"dateDebut\": \"{{voteDateDebut}}\",\n  \"dateFin\": \"{{voteDateFin}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/votes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Vote",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/votes/{{voteDeleteId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "votes",
+                "{{voteDeleteId}}"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
