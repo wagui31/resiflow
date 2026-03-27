@@ -1,9 +1,11 @@
 package com.resiflow.controller;
 
 import com.resiflow.dto.CreateAdminRequest;
+import com.resiflow.dto.UserPaiementHistoryResponse;
 import com.resiflow.dto.UserResponse;
 import com.resiflow.entity.User;
 import com.resiflow.security.AuthenticatedUser;
+import com.resiflow.service.PaiementService;
 import com.resiflow.service.UserService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,9 +24,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     private final UserService userService;
+    private final PaiementService paiementService;
 
-    public UserController(final UserService userService) {
+    public UserController(final UserService userService, final PaiementService paiementService) {
         this.userService = userService;
+        this.paiementService = paiementService;
     }
 
     @PostMapping("/admin")
@@ -41,5 +46,15 @@ public class UserController {
                 .map(UserResponse::fromUser)
                 .toList();
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{id}/paiements")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<UserPaiementHistoryResponse>> getPaiementHistory(
+            @PathVariable final Long id,
+            final Authentication authentication
+    ) {
+        AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
+        return ResponseEntity.ok(paiementService.getPaiementHistoryByUtilisateur(id, authenticatedUser));
     }
 }

@@ -53,4 +53,14 @@ public class PaymentStatusService {
                 ? StatutPaiement.EN_RETARD
                 : StatutPaiement.A_JOUR;
     }
+
+    public StatutPaiement calculateStatus(final Paiement paiement) {
+        if (paiement == null) {
+            throw new IllegalArgumentException("Paiement must not be null");
+        }
+
+        return LocalDate.now().isAfter(paiement.getDateFin())
+                ? StatutPaiement.EN_RETARD
+                : StatutPaiement.A_JOUR;
+    }
 }

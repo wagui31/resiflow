@@ -2,10 +2,12 @@ package com.resiflow.controller;
 
 import com.resiflow.dto.CreateResidenceRequest;
 import com.resiflow.dto.DashboardResponse;
+import com.resiflow.dto.ResidenceImpayeResponse;
 import com.resiflow.dto.ResidenceResponse;
 import com.resiflow.entity.Residence;
 import com.resiflow.security.AuthenticatedUser;
 import com.resiflow.service.DashboardService;
+import com.resiflow.service.PaiementService;
 import com.resiflow.service.ResidenceService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -22,15 +24,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/residences")
+@RequestMapping({"/residences", "/api/residences"})
 public class ResidenceController {
 
     private final ResidenceService residenceService;
     private final DashboardService dashboardService;
+    private final PaiementService paiementService;
 
-    public ResidenceController(final ResidenceService residenceService, final DashboardService dashboardService) {
+    public ResidenceController(
+            final ResidenceService residenceService,
+            final DashboardService dashboardService,
+            final PaiementService paiementService
+    ) {
         this.residenceService = residenceService;
         this.dashboardService = dashboardService;
+        this.paiementService = paiementService;
     }
 
     @PostMapping
@@ -57,6 +65,16 @@ public class ResidenceController {
     ) {
         AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
         return ResponseEntity.ok(dashboardService.getDashboard(residenceId, authenticatedUser));
+    }
+
+    @GetMapping("/{residenceId}/impayes")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<List<ResidenceImpayeResponse>> getImpayes(
+            @PathVariable final Long residenceId,
+            final Authentication authentication
+    ) {
+        AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
+        return ResponseEntity.ok(paiementService.getImpayesByResidence(residenceId, authenticatedUser));
     }
 
     @PutMapping("/{residenceId}")

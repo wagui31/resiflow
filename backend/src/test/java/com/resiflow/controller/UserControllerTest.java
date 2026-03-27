@@ -2,18 +2,27 @@ package com.resiflow.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resiflow.dto.CreateAdminRequest;
+import com.resiflow.dto.UserPaiementHistoryResponse;
+import com.resiflow.entity.StatutPaiement;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
 import com.resiflow.entity.UserStatus;
+import com.resiflow.security.AuthenticatedUser;
+import com.resiflow.service.PaiementService;
 import com.resiflow.service.UserService;
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -48,7 +57,30 @@ class UserControllerTest {
             }
         };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService))
+        PaiementService paiementService = new PaiementService(null, null, null, null, null) {
+            @Override
+            public List<UserPaiementHistoryResponse> getPaiementHistoryByUtilisateur(
+                    final Long userId,
+                    final AuthenticatedUser authenticatedUser
+            ) {
+                return List.of(
+                        new UserPaiementHistoryResponse(
+                                LocalDate.of(2026, 3, 1),
+                                LocalDate.of(2026, 4, 1),
+                                new BigDecimal("150.00"),
+                                StatutPaiement.A_JOUR
+                        ),
+                        new UserPaiementHistoryResponse(
+                                LocalDate.of(2026, 1, 1),
+                                LocalDate.of(2026, 2, 1),
+                                new BigDecimal("150.00"),
+                                StatutPaiement.EN_RETARD
+                        )
+                );
+            }
+        };
+
+        mockMvc = MockMvcBuilders.standaloneSetup(new UserController(userService, paiementService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -85,5 +117,21 @@ class UserControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Email must not be blank"));
+    }
+
+    @Test
+    void getPaiementHistoryReturnsReducedPayload() throws Exception {
+        AuthenticatedUser authenticatedUser = new AuthenticatedUser(10L, "user@example.com", 7L, UserRole.USER);
+
+        mockMvc.perform(get("/api/users/10/paiements")
+                        .principal(new UsernamePasswordAuthenticationToken(authenticatedUser, null)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].dateDebut").value("2026-03-01"))
+                .andExpect(jsonPath("$[0].dateFin").value("2026-04-01"))
+                .andExpect(jsonPath("$[0].montantTotal").value(150.00))
+                .andExpect(jsonPath("$[0].statut").value("A_JOUR"))
+                .andExpect(jsonPath("$[0].id").doesNotExist())
+                .andExpect(jsonPath("$[0].datePaiement").doesNotExist())
+                .andExpect(jsonPath("$[1].statut").value("EN_RETARD"));
     }
 }

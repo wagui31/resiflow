@@ -1,6 +1,8 @@
 package com.resiflow.service;
 
 import com.resiflow.dto.CreatePaiementRequest;
+import com.resiflow.dto.ResidenceImpayeResponse;
+import com.resiflow.dto.UserPaiementHistoryResponse;
 import com.resiflow.entity.Paiement;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.StatutPaiement;
@@ -9,7 +11,10 @@ import com.resiflow.repository.UserRepository;
 import com.resiflow.repository.PaiementRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,9 +76,40 @@ public class PaiementService {
     }
 
     @Transactional(readOnly = true)
+    public List<UserPaiementHistoryResponse> getPaiementHistoryByUtilisateur(
+            final Long userId,
+            final AuthenticatedUser authenticatedUser
+    ) {
+        return getPaiementsByUtilisateur(userId, authenticatedUser).stream()
+                .map(paiement -> new UserPaiementHistoryResponse(
+                        paiement.getDateDebut(),
+                        paiement.getDateFin(),
+                        paiement.getMontantTotal(),
+                        paymentStatusService.calculateStatus(paiement)
+                ))
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<Paiement> getPaiementsByResidence(final Long residenceId, final AuthenticatedUser authenticatedUser) {
         residenceAccessService.getResidenceForAdmin(residenceId, authenticatedUser);
         return paiementRepository.findAllByResidence_IdOrderByDatePaiementDesc(residenceId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ResidenceImpayeResponse> getImpayesByResidence(
+            final Long residenceId,
+            final AuthenticatedUser authenticatedUser
+    ) {
+        residenceAccessService.getResidenceForMember(residenceId, authenticatedUser);
+        LocalDate today = LocalDate.now();
+
+        return userRepository.findAllByResidence_Id(residenceId).stream()
+                .filter(user -> paymentStatusService.calculateStatus(user) == StatutPaiement.EN_RETARD)
+                .map(user -> toResidenceImpayeResponse(user, today))
+                .sorted(Comparator.comparing(ResidenceImpayeResponse::getNombreJoursRetard,
+                        Comparator.nullsLast(Comparator.reverseOrder())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -100,5 +136,19 @@ public class PaiementService {
         if (request.getDateDebut() == null) {
             throw new IllegalArgumentException("Date debut must not be null");
         }
+    }
+
+    private ResidenceImpayeResponse toResidenceImpayeResponse(final User user, final LocalDate today) {
+        Paiement lastPayment = paiementRepository.findFirstByUtilisateur_IdOrderByDateFinDescDatePaiementDesc(user.getId())
+                .orElse(null);
+        LocalDate dateFinDernierPaiement = lastPayment == null ? null : lastPayment.getDateFin();
+        Long nombreJoursRetard = dateFinDernierPaiement == null ? null : ChronoUnit.DAYS.between(dateFinDernierPaiement, today);
+
+        return new ResidenceImpayeResponse(
+                user.getId(),
+                user.getEmail(),
+                dateFinDernierPaiement,
+                nombreJoursRetard
+        );
     }
 }
