@@ -95,6 +95,17 @@ public class VoteController {
         return ResponseEntity.noContent().build();
     }
 
+    @DeleteMapping("/{id}/utilisateurs/{userId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public ResponseEntity<VoteResponse> removeUserVote(
+            @PathVariable final Long id,
+            @PathVariable final Long userId,
+            final Authentication authentication
+    ) {
+        AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
+        return ResponseEntity.ok(VoteResponse.fromEntity(voteService.removeUserVote(id, userId, authenticatedUser)));
+    }
+
     @PostMapping("/{id}/voter")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<VoteResponse> voter(

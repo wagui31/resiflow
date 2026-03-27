@@ -8,5 +8,7 @@ public interface VoteUtilisateurRepository extends JpaRepository<VoteUtilisateur
 
     boolean existsByVote_IdAndUtilisateur_Id(Long voteId, Long utilisateurId);
 
+    void deleteByVote_IdAndUtilisateur_Id(Long voteId, Long utilisateurId);
+
     long countByVote_IdAndChoix(Long voteId, VoteChoix choix);
 }

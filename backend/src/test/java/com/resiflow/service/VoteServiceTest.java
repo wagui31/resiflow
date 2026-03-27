@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -89,6 +90,61 @@ class VoteServiceTest {
         assertThat(savedVoteRef.get().getStatut()).isEqualTo(VoteStatut.VALIDE);
     }
 
+    @Test
+    void removeUserVoteDeletesVoteForOpenVote() {
+        Vote vote = buildVote(10L, 7L, LocalDateTime.now().plusDays(1), VoteStatut.OUVERT);
+        AtomicBoolean deleted = new AtomicBoolean(false);
+        VoteService voteService = new VoteService(
+                voteRepositoryProxy(vote, new AtomicReference<>()),
+                voteUtilisateurRepositoryProxy(new AtomicReference<>(), Map.of(), true, deleted),
+                residenceAccessServiceStub(buildUser(99L, 7L)),
+                depenseServiceStub()
+        );
+
+        Vote returnedVote = voteService.removeUserVote(10L, 21L, new AuthenticatedUser(99L, "admin@example.com", 7L, UserRole.ADMIN));
+
+        assertThat(returnedVote).isSameAs(vote);
+        assertThat(deleted).isTrue();
+    }
+
+    @Test
+    void removeUserVoteRejectsClosedVote() {
+        Vote vote = buildVote(10L, 7L, LocalDateTime.now().plusDays(1), VoteStatut.VALIDE);
+        VoteService voteService = new VoteService(
+                voteRepositoryProxy(vote, new AtomicReference<>()),
+                voteUtilisateurRepositoryProxy(new AtomicReference<>(), Map.of(), true, new AtomicBoolean(false)),
+                residenceAccessServiceStub(buildUser(99L, 7L)),
+                depenseServiceStub()
+        );
+
+        assertThatThrownBy(() -> voteService.removeUserVote(
+                10L,
+                21L,
+                new AuthenticatedUser(99L, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("User vote can only be removed from an open vote");
+    }
+
+    @Test
+    void removeUserVoteRejectsMissingVoteEntry() {
+        Vote vote = buildVote(10L, 7L, LocalDateTime.now().plusDays(1), VoteStatut.OUVERT);
+        VoteService voteService = new VoteService(
+                voteRepositoryProxy(vote, new AtomicReference<>()),
+                voteUtilisateurRepositoryProxy(new AtomicReference<>(), Map.of(), false, new AtomicBoolean(false)),
+                residenceAccessServiceStub(buildUser(99L, 7L)),
+                depenseServiceStub()
+        );
+
+        assertThatThrownBy(() -> voteService.removeUserVote(
+                10L,
+                21L,
+                new AuthenticatedUser(99L, "admin@example.com", 7L, UserRole.ADMIN)
+        ))
+                .isInstanceOf(java.util.NoSuchElementException.class)
+                .hasMessage("User vote not found for vote 10 and user 21");
+    }
+
     private VoteRepository voteRepositoryProxy(final Vote voteToReturn, final AtomicReference<Vote> savedVoteRef) {
         return (VoteRepository) Proxy.newProxyInstance(
                 VoteRepository.class.getClassLoader(),
@@ -123,6 +179,15 @@ class VoteServiceTest {
             final Map<VoteChoix, Long> counts,
             final boolean alreadyVoted
     ) {
+        return voteUtilisateurRepositoryProxy(savedVoteRef, counts, alreadyVoted, new AtomicBoolean(false));
+    }
+
+    private VoteUtilisateurRepository voteUtilisateurRepositoryProxy(
+            final AtomicReference<VoteUtilisateur> savedVoteRef,
+            final Map<VoteChoix, Long> counts,
+            final boolean alreadyVoted,
+            final AtomicBoolean deleted
+    ) {
         return (VoteUtilisateurRepository) Proxy.newProxyInstance(
                 VoteUtilisateurRepository.class.getClassLoader(),
                 new Class<?>[]{VoteUtilisateurRepository.class},
@@ -138,6 +203,10 @@ class VoteServiceTest {
                         VoteUtilisateur voteUtilisateur = (VoteUtilisateur) args[0];
                         savedVoteRef.set(voteUtilisateur);
                         return voteUtilisateur;
+                    }
+                    if ("deleteByVote_IdAndUtilisateur_Id".equals(method.getName())) {
+                        deleted.set(true);
+                        return null;
                     }
                     if ("toString".equals(method.getName())) {
                         return "VoteUtilisateurRepositoryTestProxy";

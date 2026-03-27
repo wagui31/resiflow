@@ -109,6 +109,28 @@ public class VoteService {
     }
 
     @Transactional
+    public Vote removeUserVote(final Long voteId, final Long userId, final AuthenticatedUser authenticatedUser) {
+        if (userId == null) {
+            throw new IllegalArgumentException("User ID must not be null");
+        }
+
+        Vote vote = getRequiredVote(voteId);
+        ensureAdminAccess(vote, authenticatedUser);
+        refreshVoteStatusIfExpired(vote);
+
+        if (vote.getStatut() != VoteStatut.OUVERT) {
+            throw new IllegalStateException("User vote can only be removed from an open vote");
+        }
+        if (!voteUtilisateurRepository.existsByVote_IdAndUtilisateur_Id(vote.getId(), userId)) {
+            throw new NoSuchElementException("User vote not found for vote " + voteId + " and user " + userId);
+        }
+
+        voteUtilisateurRepository.deleteByVote_IdAndUtilisateur_Id(vote.getId(), userId);
+        LOGGER.info("Removed user {} vote from vote {}", userId, voteId);
+        return vote;
+    }
+
+    @Transactional
     public Vote closeVote(final Long voteId, final AuthenticatedUser authenticatedUser) {
         Vote vote = getRequiredVote(voteId);
         ensureAdminAccess(vote, authenticatedUser);
