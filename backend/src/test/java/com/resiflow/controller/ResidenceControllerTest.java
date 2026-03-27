@@ -2,10 +2,12 @@ package com.resiflow.controller;
 
 import com.resiflow.dto.DashboardResponse;
 import com.resiflow.dto.ResidenceImpayeResponse;
+import com.resiflow.dto.StatsResponse;
 import com.resiflow.security.AuthenticatedUser;
 import com.resiflow.service.DashboardService;
 import com.resiflow.service.PaiementService;
 import com.resiflow.service.ResidenceService;
+import com.resiflow.service.StatsService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
@@ -44,8 +46,16 @@ class ResidenceControllerTest {
                 );
             }
         };
+        StatsService statsService = new StatsService(null, null, null) {
+            @Override
+            public StatsResponse getStats(final Long residenceId, final AuthenticatedUser authenticatedUser) {
+                return new StatsResponse(BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, List.of(), List.of());
+            }
+        };
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new ResidenceController(residenceService, dashboardService, paiementService))
+        mockMvc = MockMvcBuilders.standaloneSetup(
+                        new ResidenceController(residenceService, dashboardService, paiementService, statsService)
+                )
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

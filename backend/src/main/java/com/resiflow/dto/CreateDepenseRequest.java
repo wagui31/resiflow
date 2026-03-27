@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 public class CreateDepenseRequest {
 
     private Long residenceId;
+    private Long categorieId;
     private BigDecimal montant;
     private String description;
 
@@ -14,6 +15,14 @@ public class CreateDepenseRequest {
 
     public void setResidenceId(final Long residenceId) {
         this.residenceId = residenceId;
+    }
+
+    public Long getCategorieId() {
+        return categorieId;
+    }
+
+    public void setCategorieId(final Long categorieId) {
+        this.categorieId = categorieId;
     }
 
     public BigDecimal getMontant() {

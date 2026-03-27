@@ -287,7 +287,7 @@ class VoteServiceTest {
     }
 
     private DepenseService depenseServiceStub() {
-        return new DepenseService(null, null, null) {
+        return new DepenseService(null, null, null, null) {
         };
     }
 

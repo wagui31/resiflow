@@ -1,6 +1,7 @@
 package com.resiflow.service;
 
 import com.resiflow.dto.CreateDepenseRequest;
+import com.resiflow.entity.CategorieDepense;
 import com.resiflow.entity.Depense;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.StatutDepense;
@@ -18,15 +19,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class DepenseService {
 
     private final DepenseRepository depenseRepository;
+    private final CategorieDepenseService categorieDepenseService;
     private final ResidenceAccessService residenceAccessService;
     private final TransactionCagnotteService transactionCagnotteService;
 
     public DepenseService(
             final DepenseRepository depenseRepository,
+            final CategorieDepenseService categorieDepenseService,
             final ResidenceAccessService residenceAccessService,
             final TransactionCagnotteService transactionCagnotteService
     ) {
         this.depenseRepository = depenseRepository;
+        this.categorieDepenseService = categorieDepenseService;
         this.residenceAccessService = residenceAccessService;
         this.transactionCagnotteService = transactionCagnotteService;
     }
@@ -36,10 +40,12 @@ public class DepenseService {
         validateCreateRequest(request);
 
         Residence residence = residenceAccessService.getResidenceForAdmin(request.getResidenceId(), authenticatedUser);
+        CategorieDepense categorieDepense = categorieDepenseService.getRequiredCategorieDepense(request.getCategorieId());
         User actor = residenceAccessService.getRequiredActor(authenticatedUser);
 
         Depense depense = new Depense();
         depense.setResidence(residence);
+        depense.setCategorie(categorieDepense);
         depense.setMontant(request.getMontant());
         depense.setDescription(request.getDescription().trim());
         depense.setStatut(StatutDepense.EN_ATTENTE);
@@ -121,6 +127,9 @@ public class DepenseService {
         }
         if (request.getResidenceId() == null) {
             throw new IllegalArgumentException("Residence ID must not be null");
+        }
+        if (request.getCategorieId() == null) {
+            throw new IllegalArgumentException("Categorie depense ID must not be null");
         }
         if (request.getMontant() == null || request.getMontant().signum() <= 0) {
             throw new IllegalArgumentException("Depense montant must be greater than zero");

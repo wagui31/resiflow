@@ -9,6 +9,8 @@ public class DepenseResponse {
 
     private final Long id;
     private final Long residenceId;
+    private final Long categorieId;
+    private final String categorieNom;
     private final BigDecimal montant;
     private final String description;
     private final StatutDepense statut;
@@ -20,6 +22,8 @@ public class DepenseResponse {
     public DepenseResponse(
             final Long id,
             final Long residenceId,
+            final Long categorieId,
+            final String categorieNom,
             final BigDecimal montant,
             final String description,
             final StatutDepense statut,
@@ -30,6 +34,8 @@ public class DepenseResponse {
     ) {
         this.id = id;
         this.residenceId = residenceId;
+        this.categorieId = categorieId;
+        this.categorieNom = categorieNom;
         this.montant = montant;
         this.description = description;
         this.statut = statut;
@@ -43,6 +49,8 @@ public class DepenseResponse {
         return new DepenseResponse(
                 depense.getId(),
                 depense.getResidence().getId(),
+                depense.getCategorie() == null ? null : depense.getCategorie().getId(),
+                depense.getCategorie() == null ? null : depense.getCategorie().getNom(),
                 depense.getMontant(),
                 depense.getDescription(),
                 depense.getStatut(),
@@ -59,6 +67,14 @@ public class DepenseResponse {
 
     public Long getResidenceId() {
         return residenceId;
+    }
+
+    public Long getCategorieId() {
+        return categorieId;
+    }
+
+    public String getCategorieNom() {
+        return categorieNom;
     }
 
     public BigDecimal getMontant() {

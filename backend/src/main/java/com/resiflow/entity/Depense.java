@@ -33,6 +33,10 @@ public class Depense {
     @Column(nullable = false)
     private String description;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "categorie_id")
+    private CategorieDepense categorie;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private StatutDepense statut;
@@ -81,6 +85,14 @@ public class Depense {
 
     public void setDescription(final String description) {
         this.description = description;
+    }
+
+    public CategorieDepense getCategorie() {
+        return categorie;
+    }
+
+    public void setCategorie(final CategorieDepense categorie) {
+        this.categorie = categorie;
     }
 
     public StatutDepense getStatut() {

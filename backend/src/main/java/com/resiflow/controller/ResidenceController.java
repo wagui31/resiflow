@@ -4,11 +4,13 @@ import com.resiflow.dto.CreateResidenceRequest;
 import com.resiflow.dto.DashboardResponse;
 import com.resiflow.dto.ResidenceImpayeResponse;
 import com.resiflow.dto.ResidenceResponse;
+import com.resiflow.dto.StatsResponse;
 import com.resiflow.entity.Residence;
 import com.resiflow.security.AuthenticatedUser;
 import com.resiflow.service.DashboardService;
 import com.resiflow.service.PaiementService;
 import com.resiflow.service.ResidenceService;
+import com.resiflow.service.StatsService;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -30,15 +32,18 @@ public class ResidenceController {
     private final ResidenceService residenceService;
     private final DashboardService dashboardService;
     private final PaiementService paiementService;
+    private final StatsService statsService;
 
     public ResidenceController(
             final ResidenceService residenceService,
             final DashboardService dashboardService,
-            final PaiementService paiementService
+            final PaiementService paiementService,
+            final StatsService statsService
     ) {
         this.residenceService = residenceService;
         this.dashboardService = dashboardService;
         this.paiementService = paiementService;
+        this.statsService = statsService;
     }
 
     @PostMapping
@@ -75,6 +80,16 @@ public class ResidenceController {
     ) {
         AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
         return ResponseEntity.ok(paiementService.getImpayesByResidence(residenceId, authenticatedUser));
+    }
+
+    @GetMapping("/{residenceId}/stats")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<StatsResponse> getStats(
+            @PathVariable final Long residenceId,
+            final Authentication authentication
+    ) {
+        AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
+        return ResponseEntity.ok(statsService.getStats(residenceId, authenticatedUser));
     }
 
     @PutMapping("/{residenceId}")
