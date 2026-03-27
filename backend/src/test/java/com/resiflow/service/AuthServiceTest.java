@@ -2,13 +2,19 @@ package com.resiflow.service;
 
 import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
+import com.resiflow.dto.RegisterRequest;
+import com.resiflow.entity.Residence;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.JwtProperties;
 import com.resiflow.security.JwtService;
+import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,9 +35,16 @@ class AuthServiceTest {
         user.setPassword(passwordEncoder.encode("secret"));
         user.setResidenceId(12L);
         user.setRole(UserRole.USER);
+        user.setStatus(UserStatus.ACTIVE);
 
         JwtService jwtService = new JwtService(new JwtProperties(SECRET, 3600000));
-        AuthService authService = new AuthService(repositoryProxy(Optional.of(user)), jwtService, passwordEncoder);
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.of(user), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
+                jwtService,
+                passwordEncoder,
+                new EmailService()
+        );
 
         LoginRequest request = new LoginRequest();
         request.setEmail(" resident@example.com ");
@@ -50,9 +63,11 @@ class AuthServiceTest {
     @Test
     void loginRejectsBlankEmail() {
         AuthService authService = new AuthService(
-                repositoryProxy(Optional.empty()),
+                repositoryProxy(Optional.empty(), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
                 new JwtService(new JwtProperties(SECRET, 3600000)),
-                passwordEncoder
+                passwordEncoder,
+                new EmailService()
         );
 
         LoginRequest request = new LoginRequest();
@@ -67,9 +82,11 @@ class AuthServiceTest {
     @Test
     void loginRejectsNullRequest() {
         AuthService authService = new AuthService(
-                repositoryProxy(Optional.empty()),
+                repositoryProxy(Optional.empty(), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
                 new JwtService(new JwtProperties(SECRET, 3600000)),
-                passwordEncoder
+                passwordEncoder,
+                new EmailService()
         );
 
         assertThatThrownBy(() -> authService.login(null))
@@ -80,9 +97,11 @@ class AuthServiceTest {
     @Test
     void loginRejectsBlankPassword() {
         AuthService authService = new AuthService(
-                repositoryProxy(Optional.empty()),
+                repositoryProxy(Optional.empty(), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
                 new JwtService(new JwtProperties(SECRET, 3600000)),
-                passwordEncoder
+                passwordEncoder,
+                new EmailService()
         );
 
         LoginRequest request = new LoginRequest();
@@ -97,9 +116,11 @@ class AuthServiceTest {
     @Test
     void loginRejectsUnknownEmail() {
         AuthService authService = new AuthService(
-                repositoryProxy(Optional.empty()),
+                repositoryProxy(Optional.empty(), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
                 new JwtService(new JwtProperties(SECRET, 3600000)),
-                passwordEncoder
+                passwordEncoder,
+                new EmailService()
         );
 
         LoginRequest request = new LoginRequest();
@@ -117,11 +138,14 @@ class AuthServiceTest {
         user.setEmail("resident@example.com");
         user.setPassword(passwordEncoder.encode("secret"));
         user.setRole(UserRole.USER);
+        user.setStatus(UserStatus.ACTIVE);
 
         AuthService authService = new AuthService(
-                repositoryProxy(Optional.of(user)),
+                repositoryProxy(Optional.of(user), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
                 new JwtService(new JwtProperties(SECRET, 3600000)),
-                passwordEncoder
+                passwordEncoder,
+                new EmailService()
         );
 
         LoginRequest request = new LoginRequest();
@@ -133,24 +157,117 @@ class AuthServiceTest {
                 .hasMessage("Invalid credentials");
     }
 
-    private UserRepository repositoryProxy(final Optional<User> userToReturn) {
+    @Test
+    void loginRejectsPendingUser() {
+        User user = new User();
+        user.setEmail("resident@example.com");
+        user.setPassword(passwordEncoder.encode("secret"));
+        user.setRole(UserRole.USER);
+        user.setStatus(UserStatus.PENDING);
+
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.of(user), new AtomicReference<>(), List.of()),
+                residenceServiceStub(),
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder,
+                new EmailService()
+        );
+
+        LoginRequest request = new LoginRequest();
+        request.setEmail("resident@example.com");
+        request.setPassword("secret");
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(AccountStatusException.class)
+                .hasMessage("Votre compte est en attente de validation");
+    }
+
+    @Test
+    void registerCreatesPendingResidenceUser() {
+        AtomicReference<User> savedUserRef = new AtomicReference<>();
+        AuthService authService = new AuthService(
+                repositoryProxy(Optional.empty(), savedUserRef, List.of("admin@example.com")),
+                residenceServiceStub(),
+                new JwtService(new JwtProperties(SECRET, 3600000)),
+                passwordEncoder,
+                new EmailService()
+        );
+
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail(" resident@example.com ");
+        request.setPassword(" secret ");
+        request.setResidenceCode(" RES-ABC123 ");
+
+        User result = authService.register(request);
+
+        assertThat(savedUserRef.get().getEmail()).isEqualTo("resident@example.com");
+        assertThat(passwordEncoder.matches("secret", savedUserRef.get().getPassword())).isTrue();
+        assertThat(savedUserRef.get().getRole()).isEqualTo(UserRole.USER);
+        assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.PENDING);
+        assertThat(savedUserRef.get().getResidence().getCode()).isEqualTo("RES-ABC123");
+        assertThat(result.getId()).isEqualTo(99L);
+    }
+
+    private UserRepository repositoryProxy(
+            final Optional<User> userToReturn,
+            final AtomicReference<User> savedUserRef,
+            final List<String> adminEmails
+    ) {
+        InvocationHandler handler = (proxy, method, args) -> {
+            if ("findByEmail".equals(method.getName())) {
+                return userToReturn;
+            }
+            if ("existsByEmail".equals(method.getName())) {
+                return userToReturn.isPresent();
+            }
+            if ("save".equals(method.getName())) {
+                User user = (User) args[0];
+                savedUserRef.set(user);
+                User saved = new User();
+                saved.setId(99L);
+                saved.setEmail(user.getEmail());
+                saved.setPassword(user.getPassword());
+                saved.setResidence(user.getResidence());
+                saved.setRole(user.getRole());
+                saved.setStatus(user.getStatus());
+                return saved;
+            }
+            if ("findAllByResidence_IdAndRole".equals(method.getName())) {
+                return adminEmails.stream().map(email -> {
+                    User admin = new User();
+                    admin.setEmail(email);
+                    admin.setRole(UserRole.ADMIN);
+                    admin.setStatus(UserStatus.ACTIVE);
+                    return admin;
+                }).toList();
+            }
+            if ("toString".equals(method.getName())) {
+                return "UserRepositoryTestProxy";
+            }
+            if ("hashCode".equals(method.getName())) {
+                return System.identityHashCode(proxy);
+            }
+            if ("equals".equals(method.getName())) {
+                return proxy == args[0];
+            }
+            throw new UnsupportedOperationException("Unsupported method: " + method.getName());
+        };
+
         return (UserRepository) Proxy.newProxyInstance(
                 UserRepository.class.getClassLoader(),
                 new Class<?>[]{UserRepository.class},
-                (proxy, method, args) -> {
-                    if ("findByEmail".equals(method.getName())) {
-                        return userToReturn;
-                    }
-                    if ("toString".equals(method.getName())) {
-                        return "UserRepositoryTestProxy";
-                    }
-                    if ("hashCode".equals(method.getName())) {
-                        return System.identityHashCode(proxy);
-                    }
-                    if ("equals".equals(method.getName())) {
-                        return proxy == args[0];
-                    }
-                    throw new UnsupportedOperationException("Unsupported method: " + method.getName());
-                });
+                handler);
+    }
+
+    private ResidenceService residenceServiceStub() {
+        return new ResidenceService(null) {
+            @Override
+            public Residence getRequiredResidenceByCode(final String residenceCode) {
+                Residence residence = new Residence();
+                residence.setId(12L);
+                residence.setCode(residenceCode);
+                return residence;
+            }
+        };
     }
 }

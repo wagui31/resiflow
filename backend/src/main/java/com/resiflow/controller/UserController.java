@@ -1,8 +1,6 @@
 package com.resiflow.controller;
 
 import com.resiflow.dto.CreateAdminRequest;
-import com.resiflow.dto.CreateUserRequest;
-import com.resiflow.dto.CreateUserResponse;
 import com.resiflow.dto.UserResponse;
 import com.resiflow.entity.User;
 import com.resiflow.security.AuthenticatedUser;
@@ -28,22 +26,11 @@ public class UserController {
         this.userService = userService;
     }
 
-    @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<CreateUserResponse> createUser(
-            @RequestBody final CreateUserRequest request,
-            final Authentication authentication
-    ) {
-        AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
-        User createdUser = userService.createResidenceUser(request, authenticatedUser);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CreateUserResponse.fromUser(createdUser));
-    }
-
     @PostMapping("/admin")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
-    public ResponseEntity<CreateUserResponse> createAdmin(@RequestBody final CreateAdminRequest request) {
+    public ResponseEntity<UserResponse> createAdmin(@RequestBody final CreateAdminRequest request) {
         User createdUser = userService.createAdmin(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(CreateUserResponse.fromUser(createdUser));
+        return ResponseEntity.status(HttpStatus.CREATED).body(UserResponse.fromUser(createdUser));
     }
 
     @GetMapping

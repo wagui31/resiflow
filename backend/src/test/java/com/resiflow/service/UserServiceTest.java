@@ -1,13 +1,16 @@
 package com.resiflow.service;
 
-import com.resiflow.dto.CreateUserRequest;
+import com.resiflow.dto.AdminUserActionRequest;
+import com.resiflow.dto.CreateAdminRequest;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 import org.junit.jupiter.api.Test;
@@ -23,106 +26,91 @@ class UserServiceTest {
     private final PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Test
-    void createUserSavesUserFromRequest() {
+    void createAdminCreatesActiveResidenceAdmin() {
         AtomicReference<User> savedUserRef = new AtomicReference<>();
-        UserRepository userRepository = repositoryProxy(savedUserRef);
-        UserService userService = new UserService(userRepository, passwordEncoder, residenceServiceStub());
-
-        CreateUserRequest request = new CreateUserRequest();
-        request.setEmail(" resident@example.com ");
-        request.setPassword(" secret ");
-
-        User result = userService.createResidenceUser(
-                request,
-                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN)
+        UserService userService = new UserService(
+                repositoryProxy(savedUserRef, Optional.empty(), Collections.emptyList(), Collections.emptyList()),
+                passwordEncoder,
+                residenceServiceStub(),
+                new EmailService()
         );
 
-        User userToSave = savedUserRef.get();
-        assertThat(userToSave.getEmail()).isEqualTo("resident@example.com");
-        assertThat(passwordEncoder.matches("secret", userToSave.getPassword())).isTrue();
-        assertThat(userToSave.getResidenceId()).isEqualTo(7L);
-        assertThat(userToSave.getRole()).isEqualTo(UserRole.USER);
+        CreateAdminRequest request = new CreateAdminRequest();
+        request.setEmail(" admin@example.com ");
+        request.setPassword(" secret ");
+        request.setResidenceId(7L);
+
+        User result = userService.createAdmin(request);
+
+        assertThat(savedUserRef.get().getEmail()).isEqualTo("admin@example.com");
+        assertThat(savedUserRef.get().getRole()).isEqualTo(UserRole.ADMIN);
+        assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(savedUserRef.get().getResidenceId()).isEqualTo(7L);
+        assertThat(passwordEncoder.matches("secret", savedUserRef.get().getPassword())).isTrue();
         assertThat(result.getId()).isEqualTo(1L);
     }
 
     @Test
-    void createUserRejectsBlankEmail() {
+    void getPendingUsersReturnsResidenceScopedUsersForAdmin() {
+        User pendingUser = buildUser(14L, "pending@example.com", 7L, UserRole.USER, UserStatus.PENDING);
         UserService userService = new UserService(
-                repositoryProxy(new AtomicReference<>()),
+                repositoryProxy(new AtomicReference<>(), Optional.empty(), List.of(pendingUser), Collections.emptyList()),
                 passwordEncoder,
-                residenceServiceStub()
+                residenceServiceStub(),
+                new EmailService()
         );
 
-        CreateUserRequest request = new CreateUserRequest();
-        request.setEmail(" ");
-        request.setPassword("secret");
+        List<User> result = userService.getPendingUsers(new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN));
 
-        assertThatThrownBy(() -> userService.createResidenceUser(
-                request,
-                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN)
-        ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Email must not be blank");
+        assertThat(result).containsExactly(pendingUser);
     }
 
     @Test
-    void createUserRejectsNullRequest() {
+    void approveUserActivatesPendingUserInSameResidence() {
+        AtomicReference<User> savedUserRef = new AtomicReference<>();
+        User pendingUser = buildUser(14L, "pending@example.com", 7L, UserRole.USER, UserStatus.PENDING);
         UserService userService = new UserService(
-                repositoryProxy(new AtomicReference<>()),
+                repositoryProxy(savedUserRef, Optional.of(pendingUser), Collections.emptyList(), Collections.emptyList()),
                 passwordEncoder,
-                residenceServiceStub()
+                residenceServiceStub(),
+                new EmailService()
         );
 
-        assertThatThrownBy(() -> userService.createResidenceUser(
-                null,
-                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN)
-        ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Create user request must not be null");
+        User result = userService.approveUser(
+                14L,
+                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN),
+                new AdminUserActionRequest()
+        );
+
+        assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(result.getStatus()).isEqualTo(UserStatus.ACTIVE);
     }
 
     @Test
-    void createUserRejectsBlankPassword() {
+    void rejectUserForbidsAdminManagingAnotherAdmin() {
+        User managedAdmin = buildUser(20L, "other-admin@example.com", 7L, UserRole.ADMIN, UserStatus.PENDING);
         UserService userService = new UserService(
-                repositoryProxy(new AtomicReference<>()),
+                repositoryProxy(new AtomicReference<>(), Optional.of(managedAdmin), Collections.emptyList(), Collections.emptyList()),
                 passwordEncoder,
-                residenceServiceStub()
+                residenceServiceStub(),
+                new EmailService()
         );
 
-        CreateUserRequest request = new CreateUserRequest();
-        request.setEmail("resident@example.com");
-        request.setPassword(" ");
-
-        assertThatThrownBy(() -> userService.createResidenceUser(
-                request,
-                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN)
-        ))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("Password must not be blank");
-    }
-
-    @Test
-    void createUserRejectsCrossResidenceRequest() {
-        UserService userService = new UserService(
-                repositoryProxy(new AtomicReference<>()),
-                passwordEncoder,
-                residenceServiceStub()
-        );
-
-        CreateUserRequest request = new CreateUserRequest();
-        request.setEmail("resident@example.com");
-        request.setPassword("secret");
-        request.setResidenceId(99L);
-
-        assertThatThrownBy(() -> userService.createResidenceUser(
-                request,
-                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN)
+        assertThatThrownBy(() -> userService.rejectUser(
+                20L,
+                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN),
+                null
         ))
                 .isInstanceOf(AccessDeniedException.class)
-                .hasMessage("Cross-residence access is forbidden");
+                .hasMessage("Residence admins cannot manage other admins");
     }
 
-    private UserRepository repositoryProxy(final AtomicReference<User> savedUserRef) {
+    private UserRepository repositoryProxy(
+            final AtomicReference<User> savedUserRef,
+            final Optional<User> managedUser,
+            final List<User> pendingUsers,
+            final List<User> allUsers
+    ) {
         return (UserRepository) Proxy.newProxyInstance(
                 UserRepository.class.getClassLoader(),
                 new Class<?>[]{UserRepository.class},
@@ -135,18 +123,23 @@ class UserServiceTest {
                         savedUser.setId(1L);
                         savedUser.setEmail(user.getEmail());
                         savedUser.setPassword(user.getPassword());
-                        savedUser.setResidenceId(user.getResidenceId());
+                        savedUser.setResidence(user.getResidence());
                         savedUser.setRole(user.getRole());
+                        savedUser.setStatus(user.getStatus());
                         return savedUser;
                     }
                     if ("existsByEmail".equals(method.getName())) {
                         return false;
                     }
                     if ("findAll".equals(method.getName())) {
-                        return Collections.emptyList();
+                        return allUsers;
                     }
-                    if ("findByIdAndResidence_Id".equals(method.getName())) {
-                        return Optional.empty();
+                    if ("findAllByResidence_IdAndStatus".equals(method.getName())
+                            || "findAllByStatus".equals(method.getName())) {
+                        return pendingUsers;
+                    }
+                    if ("findByIdAndResidence_Id".equals(method.getName()) || "findById".equals(method.getName())) {
+                        return managedUser;
                     }
                     if ("toString".equals(method.getName())) {
                         return "UserRepositoryTestProxy";
@@ -167,8 +160,25 @@ class UserServiceTest {
             public Residence getRequiredResidence(final Long residenceId) {
                 Residence residence = new Residence();
                 residence.setId(residenceId);
+                residence.setCode("RES-ABC123");
                 return residence;
             }
         };
+    }
+
+    private User buildUser(
+            final Long id,
+            final String email,
+            final Long residenceId,
+            final UserRole role,
+            final UserStatus status
+    ) {
+        User user = new User();
+        user.setId(id);
+        user.setEmail(email);
+        user.setResidenceId(residenceId);
+        user.setRole(role);
+        user.setStatus(status);
+        return user;
     }
 }

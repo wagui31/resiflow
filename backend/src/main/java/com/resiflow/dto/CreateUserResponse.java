@@ -2,11 +2,19 @@ package com.resiflow.dto;
 
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.UserStatus;
 
 public class CreateUserResponse extends UserResponse {
 
-    public CreateUserResponse(final Long id, final String email, final Long residenceId, final UserRole role) {
-        super(id, email, residenceId, role);
+    public CreateUserResponse(
+            final Long id,
+            final String email,
+            final Long residenceId,
+            final String residenceCode,
+            final UserRole role,
+            final UserStatus status
+    ) {
+        super(id, email, residenceId, residenceCode, role, status);
     }
 
     public static CreateUserResponse fromUser(final User user) {
@@ -14,7 +22,9 @@ public class CreateUserResponse extends UserResponse {
                 user.getId(),
                 user.getEmail(),
                 user.getResidenceId(),
-                user.getRole()
+                user.getResidence() == null ? null : user.getResidence().getCode(),
+                user.getRole(),
+                user.getStatus()
         );
     }
 }

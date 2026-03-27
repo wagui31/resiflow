@@ -4,6 +4,7 @@ public class CreateResidenceRequest {
 
     private String name;
     private String address;
+    private String code;
     private Boolean enabled;
 
     public String getName() {
@@ -20,6 +21,14 @@ public class CreateResidenceRequest {
 
     public void setAddress(final String address) {
         this.address = address;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(final String code) {
+        this.code = code;
     }
 
     public Boolean getEnabled() {

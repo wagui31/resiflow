@@ -1,10 +1,11 @@
 package com.resiflow.service;
 
+import com.resiflow.dto.AdminUserActionRequest;
 import com.resiflow.dto.CreateAdminRequest;
-import com.resiflow.dto.CreateUserRequest;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.util.List;
@@ -19,15 +20,18 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final ResidenceService residenceService;
+    private final EmailService emailService;
 
     public UserService(
             final UserRepository userRepository,
             final PasswordEncoder passwordEncoder,
-            final ResidenceService residenceService
+            final ResidenceService residenceService,
+            final EmailService emailService
     ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.residenceService = residenceService;
+        this.emailService = emailService;
     }
 
     public User createAdmin(final CreateAdminRequest request) {
@@ -41,27 +45,7 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         user.setResidence(residence);
         user.setRole(UserRole.ADMIN);
-
-        return userRepository.save(user);
-    }
-
-    public User createResidenceUser(final CreateUserRequest request, final AuthenticatedUser authenticatedUser) {
-        validateRequest(request);
-        AuthenticatedUser actor = requireAuthenticatedUser(authenticatedUser);
-        requireRole(actor, UserRole.ADMIN);
-        ensureEmailAvailable(request.getEmail());
-
-        Residence residence = residenceService.getRequiredResidence(actor.residenceId());
-
-        if (request.getResidenceId() != null && !request.getResidenceId().equals(actor.residenceId())) {
-            throw new AccessDeniedException("Cross-residence access is forbidden");
-        }
-
-        User user = new User();
-        user.setEmail(request.getEmail().trim());
-        user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
-        user.setResidence(residence);
-        user.setRole(UserRole.USER);
+        user.setStatus(UserStatus.ACTIVE);
 
         return userRepository.save(user);
     }
@@ -86,6 +70,42 @@ public class UserService {
                 .orElseThrow(() -> new NoSuchElementException("User not found in residence: " + userId));
     }
 
+    public List<User> getPendingUsers(final AuthenticatedUser authenticatedUser) {
+        AuthenticatedUser actor = requireAuthenticatedUser(authenticatedUser);
+        if (actor.role() == UserRole.SUPER_ADMIN) {
+            return userRepository.findAllByStatus(UserStatus.PENDING);
+        }
+        if (actor.role() == UserRole.ADMIN) {
+            requireResidenceId(actor.residenceId());
+            return userRepository.findAllByResidence_IdAndStatus(actor.residenceId(), UserStatus.PENDING);
+        }
+        throw new AccessDeniedException("Insufficient role to access pending users");
+    }
+
+    public User approveUser(
+            final Long userId,
+            final AuthenticatedUser authenticatedUser,
+            final AdminUserActionRequest request
+    ) {
+        User user = getManageableUser(userId, authenticatedUser);
+        user.setStatus(UserStatus.ACTIVE);
+        User savedUser = userRepository.save(user);
+        emailService.sendToUser(savedUser.getEmail(), "Votre compte est activé", buildActionBody("approuve", request));
+        return savedUser;
+    }
+
+    public User rejectUser(
+            final Long userId,
+            final AuthenticatedUser authenticatedUser,
+            final AdminUserActionRequest request
+    ) {
+        User user = getManageableUser(userId, authenticatedUser);
+        user.setStatus(UserStatus.REJECTED);
+        User savedUser = userRepository.save(user);
+        emailService.sendToUser(savedUser.getEmail(), "Votre demande a été refusée", buildActionBody("rejete", request));
+        return savedUser;
+    }
+
     private void validateAdminRequest(final CreateAdminRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("Create admin request must not be null");
@@ -98,18 +118,6 @@ public class UserService {
         }
         if (request.getResidenceId() == null) {
             throw new IllegalArgumentException("Residence ID must not be null");
-        }
-    }
-
-    private void validateRequest(final CreateUserRequest request) {
-        if (request == null) {
-            throw new IllegalArgumentException("Create user request must not be null");
-        }
-        if (isBlank(request.getEmail())) {
-            throw new IllegalArgumentException("Email must not be blank");
-        }
-        if (isBlank(request.getPassword())) {
-            throw new IllegalArgumentException("Password must not be blank");
         }
     }
 
@@ -144,5 +152,42 @@ public class UserService {
 
     private boolean isBlank(final String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private User getManageableUser(final Long userId, final AuthenticatedUser authenticatedUser) {
+        AuthenticatedUser actor = requireAuthenticatedUser(authenticatedUser);
+
+        if (actor.role() == UserRole.SUPER_ADMIN) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
+            ensureAdminActionAllowed(actor, user);
+            return user;
+        }
+
+        if (actor.role() == UserRole.ADMIN) {
+            requireResidenceId(actor.residenceId());
+            User user = userRepository.findByIdAndResidence_Id(userId, actor.residenceId())
+                    .orElseThrow(() -> new NoSuchElementException("User not found in residence: " + userId));
+            ensureAdminActionAllowed(actor, user);
+            return user;
+        }
+
+        throw new AccessDeniedException("Insufficient role for this operation");
+    }
+
+    private void ensureAdminActionAllowed(final AuthenticatedUser actor, final User user) {
+        if (user.getRole() == UserRole.SUPER_ADMIN) {
+            throw new AccessDeniedException("Cannot manage a super admin user");
+        }
+        if (actor.role() == UserRole.ADMIN && user.getRole() == UserRole.ADMIN) {
+            throw new AccessDeniedException("Residence admins cannot manage other admins");
+        }
+    }
+
+    private String buildActionBody(final String action, final AdminUserActionRequest request) {
+        if (request != null && !isBlank(request.getComment())) {
+            return "Votre demande a ete " + action + ". Commentaire: " + request.getComment().trim();
+        }
+        return "Votre demande a ete " + action + ".";
     }
 }

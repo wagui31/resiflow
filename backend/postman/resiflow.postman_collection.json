@@ -1,0 +1,430 @@
+{
+  "info": {
+    "_postman_id": "8f9294a8-b35e-45da-9890-2f8d4c65f8bb",
+    "name": "Resiflow API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Collection couvrant le workflow residence -> register -> validation admin -> login."
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/health",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('register status is success', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('pendingUserId', json.id);",
+                  "}",
+                  "if (json && json.residenceCode) {",
+                  "    pm.environment.set('residenceCode', json.residenceCode);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pendingUserEmail}}\",\n  \"password\": \"{{pendingUserPassword}}\",\n  \"residenceCode\": \"{{residenceCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Active User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('login status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.token) {",
+                  "    pm.environment.set('userToken', json.token);",
+                  "    pm.environment.set('userId', json.userId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pendingUserEmail}}\",\n  \"password\": \"{{pendingUserPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Residences",
+      "item": [
+        {
+          "name": "Create Residence",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('create residence status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('residenceId', json.id);",
+                  "}",
+                  "if (json && json.code) {",
+                  "    pm.environment.set('residenceCode', json.code);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Residence Paris Centre\",\n  \"address\": \"12 rue de la Paix, Paris\",\n  \"enabled\": true,\n  \"code\": \"{{residenceCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/residences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residences"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Residences",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residences"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Residence",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Residence Paris Centre Updated\",\n  \"address\": \"12 rue de la Paix, Paris\",\n  \"enabled\": true,\n  \"code\": \"{{residenceCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/residences/{{residenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residences",
+                "{{residenceId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Delete Residence",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/residences/{{residenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residences",
+                "{{residenceId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Create Residence Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('create admin status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('adminUserId', json.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\",\n  \"residenceId\": {{residenceId}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/admin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "admin"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin Workflow",
+      "item": [
+        {
+          "name": "List Pending Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "pending"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Pending User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Validation manuelle par l'administrateur\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{pendingUserId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{pendingUserId}}",
+                "approve"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Pending User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"comment\": \"Demande incomplète\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/users/{{pendingUserId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "users",
+                "{{pendingUserId}}",
+                "reject"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    }
+  ]
+}

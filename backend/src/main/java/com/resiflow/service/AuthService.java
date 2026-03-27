@@ -2,29 +2,41 @@ package com.resiflow.service;
 
 import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
+import com.resiflow.dto.RegisterRequest;
 import com.resiflow.entity.User;
+import com.resiflow.entity.UserRole;
+import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.JwtService;
-import org.springframework.stereotype.Service;
+import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
 
     private static final String INVALID_CREDENTIALS_MESSAGE = "Invalid credentials";
+    private static final String PENDING_MESSAGE = "Votre compte est en attente de validation";
+    private static final String REJECTED_MESSAGE = "Votre demande a ete refusee";
 
     private final UserRepository userRepository;
+    private final ResidenceService residenceService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
 
     public AuthService(
             final UserRepository userRepository,
+            final ResidenceService residenceService,
             final JwtService jwtService,
-            final PasswordEncoder passwordEncoder
+            final PasswordEncoder passwordEncoder,
+            final EmailService emailService
     ) {
         this.userRepository = userRepository;
+        this.residenceService = residenceService;
         this.jwtService = jwtService;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
     }
 
     public LoginResponse login(final LoginRequest request) {
@@ -39,9 +51,43 @@ public class AuthService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new InvalidCredentialsException(INVALID_CREDENTIALS_MESSAGE);
         }
+        if (user.getStatus() == UserStatus.PENDING) {
+            throw new AccountStatusException(PENDING_MESSAGE);
+        }
+        if (user.getStatus() == UserStatus.REJECTED) {
+            throw new AccountStatusException(REJECTED_MESSAGE);
+        }
 
         String token = jwtService.generateToken(user);
         return new LoginResponse(user.getId(), user.getEmail(), user.getResidenceId(), user.getRole(), token);
+    }
+
+    public User register(final RegisterRequest request) {
+        validateRegisterRequest(request);
+
+        String email = request.getEmail().trim();
+        ensureEmailAvailable(email);
+
+        User user = new User();
+        user.setEmail(email);
+        user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
+        user.setResidence(residenceService.getRequiredResidenceByCode(request.getResidenceCode().trim().toUpperCase()));
+        user.setRole(UserRole.USER);
+        user.setStatus(UserStatus.PENDING);
+
+        User savedUser = userRepository.save(user);
+
+        List<String> adminEmails = userRepository.findAllByResidence_IdAndRole(savedUser.getResidenceId(), UserRole.ADMIN)
+                .stream()
+                .map(User::getEmail)
+                .toList();
+        emailService.sendToAdmins(
+                adminEmails,
+                "Nouvelle demande d'inscription",
+                "Nouvelle demande d'inscription pour " + savedUser.getEmail()
+        );
+
+        return savedUser;
     }
 
     private void validateRequest(final LoginRequest request) {
@@ -58,5 +104,26 @@ public class AuthService {
 
     private boolean isBlank(final String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private void validateRegisterRequest(final RegisterRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Register request must not be null");
+        }
+        if (isBlank(request.getEmail())) {
+            throw new IllegalArgumentException("Email must not be blank");
+        }
+        if (isBlank(request.getPassword())) {
+            throw new IllegalArgumentException("Password must not be blank");
+        }
+        if (isBlank(request.getResidenceCode())) {
+            throw new IllegalArgumentException("Residence code must not be blank");
+        }
+    }
+
+    private void ensureEmailAvailable(final String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("Email is already used");
+        }
     }
 }

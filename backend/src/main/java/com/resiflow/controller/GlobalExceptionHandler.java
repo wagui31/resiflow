@@ -1,5 +1,6 @@
 package com.resiflow.controller;
 
+import com.resiflow.service.AccountStatusException;
 import com.resiflow.service.InvalidCredentialsException;
 import java.util.NoSuchElementException;
 import org.springframework.http.HttpStatus;
@@ -20,6 +21,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public String handleInvalidCredentialsException(final InvalidCredentialsException exception) {
+        return exception.getMessage();
+    }
+
+    @ExceptionHandler(AccountStatusException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public String handleAccountStatusException(final AccountStatusException exception) {
         return exception.getMessage();
     }
 

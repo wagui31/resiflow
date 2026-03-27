@@ -3,8 +3,13 @@ package com.resiflow.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.resiflow.dto.LoginRequest;
 import com.resiflow.dto.LoginResponse;
+import com.resiflow.dto.RegisterRequest;
+import com.resiflow.entity.Residence;
+import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.UserStatus;
 import com.resiflow.service.AuthService;
+import com.resiflow.service.EmailService;
 import com.resiflow.service.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +33,7 @@ class AuthControllerTest {
 
     @BeforeEach
     void setUp() {
-        AuthService authService = new AuthService(null, null, new BCryptPasswordEncoder()) {
+        AuthService authService = new AuthService(null, null, null, new BCryptPasswordEncoder(), new EmailService()) {
             @Override
             public LoginResponse login(final LoginRequest request) {
                 if (request == null || request.getEmail() == null || request.getEmail().trim().isEmpty()) {
@@ -39,6 +44,25 @@ class AuthControllerTest {
                     return new LoginResponse(1L, "resident@example.com", 7L, UserRole.USER, TOKEN);
                 }
                 throw new InvalidCredentialsException("Invalid credentials");
+            }
+
+            @Override
+            public User register(final RegisterRequest request) {
+                if (request == null || request.getResidenceCode() == null || request.getResidenceCode().trim().isEmpty()) {
+                    throw new IllegalArgumentException("Residence code must not be blank");
+                }
+
+                Residence residence = new Residence();
+                residence.setId(7L);
+                residence.setCode(request.getResidenceCode().trim());
+
+                User user = new User();
+                user.setId(2L);
+                user.setEmail(request.getEmail().trim());
+                user.setResidence(residence);
+                user.setRole(UserRole.USER);
+                user.setStatus(UserStatus.PENDING);
+                return user;
             }
         };
 
@@ -88,5 +112,24 @@ class AuthControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isUnauthorized())
                 .andExpect(content().string("Invalid credentials"));
+    }
+
+    @Test
+    void registerReturnsPendingUser() throws Exception {
+        RegisterRequest request = new RegisterRequest();
+        request.setEmail("resident@example.com");
+        request.setPassword("secret");
+        request.setResidenceCode("RES-ABC123");
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(2L))
+                .andExpect(jsonPath("$.email").value("resident@example.com"))
+                .andExpect(jsonPath("$.residenceId").value(7L))
+                .andExpect(jsonPath("$.residenceCode").value("RES-ABC123"))
+                .andExpect(jsonPath("$.role").value("USER"))
+                .andExpect(jsonPath("$.status").value("PENDING"));
     }
 }
