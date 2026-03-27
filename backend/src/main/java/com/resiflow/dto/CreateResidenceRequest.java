@@ -1,11 +1,14 @@
 package com.resiflow.dto;
 
+import java.math.BigDecimal;
+
 public class CreateResidenceRequest {
 
     private String name;
     private String address;
     private String code;
     private Boolean enabled;
+    private BigDecimal montantMensuel;
 
     public String getName() {
         return name;
@@ -37,5 +40,13 @@ public class CreateResidenceRequest {
 
     public void setEnabled(final Boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public BigDecimal getMontantMensuel() {
+        return montantMensuel;
+    }
+
+    public void setMontantMensuel(final BigDecimal montantMensuel) {
+        this.montantMensuel = montantMensuel;
     }
 }

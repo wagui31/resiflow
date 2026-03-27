@@ -5,6 +5,7 @@ import com.resiflow.dto.LoginResponse;
 import com.resiflow.dto.RegisterRequest;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.StatutPaiement;
 import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.JwtService;
@@ -76,6 +77,7 @@ public class AuthService {
         user.setResidence(residenceService.getRequiredResidenceByCode(request.getResidenceCode().trim().toUpperCase()));
         user.setRole(UserRole.USER);
         user.setStatus(UserStatus.PENDING);
+        user.setStatutPaiement(StatutPaiement.EN_RETARD);
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
 

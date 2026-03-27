@@ -7,6 +7,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ThreadLocalRandom;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -18,6 +19,7 @@ public class ResidenceService {
         this.residenceRepository = residenceRepository;
     }
 
+    @Transactional
     public Residence createResidence(final CreateResidenceRequest request) {
         validateCreateRequest(request);
 
@@ -27,6 +29,7 @@ public class ResidenceService {
         residence.setAddress(request.getAddress().trim());
         residence.setCode(resolveResidenceCode(request.getCode(), null));
         residence.setEnabled(request.getEnabled() == null || request.getEnabled());
+        residence.setMontantMensuel(request.getMontantMensuel());
         residence.setCreatedAt(now);
         residence.setUpdatedAt(now);
 
@@ -37,6 +40,7 @@ public class ResidenceService {
         return residenceRepository.findAll();
     }
 
+    @Transactional
     public Residence updateResidence(final Long residenceId, final CreateResidenceRequest request) {
         validateCreateRequest(request);
 
@@ -47,6 +51,7 @@ public class ResidenceService {
             residence.setCode(resolveResidenceCode(request.getCode(), residenceId));
         }
         residence.setEnabled(request.getEnabled() == null || request.getEnabled());
+        residence.setMontantMensuel(request.getMontantMensuel());
         residence.setUpdatedAt(LocalDateTime.now());
 
         return residenceRepository.save(residence);
@@ -84,6 +89,12 @@ public class ResidenceService {
         }
         if (isBlank(request.getAddress())) {
             throw new IllegalArgumentException("Residence address must not be blank");
+        }
+        if (request.getMontantMensuel() == null) {
+            throw new IllegalArgumentException("Residence monthly amount must not be null");
+        }
+        if (request.getMontantMensuel().signum() <= 0) {
+            throw new IllegalArgumentException("Residence monthly amount must be greater than zero");
         }
     }
 

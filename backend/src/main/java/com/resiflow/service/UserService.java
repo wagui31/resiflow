@@ -3,6 +3,7 @@ package com.resiflow.service;
 import com.resiflow.dto.AdminUserActionRequest;
 import com.resiflow.dto.CreateAdminRequest;
 import com.resiflow.entity.Residence;
+import com.resiflow.entity.StatutPaiement;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
 import com.resiflow.entity.UserStatus;
@@ -12,8 +13,10 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class UserService {
@@ -22,6 +25,7 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final ResidenceService residenceService;
     private final EmailService emailService;
+    private final PaymentStatusService paymentStatusService;
 
     public UserService(
             final UserRepository userRepository,
@@ -29,12 +33,25 @@ public class UserService {
             final ResidenceService residenceService,
             final EmailService emailService
     ) {
+        this(userRepository, passwordEncoder, residenceService, emailService, null);
+    }
+
+    @Autowired
+    public UserService(
+            final UserRepository userRepository,
+            final PasswordEncoder passwordEncoder,
+            final ResidenceService residenceService,
+            final EmailService emailService,
+            final PaymentStatusService paymentStatusService
+    ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.residenceService = residenceService;
         this.emailService = emailService;
+        this.paymentStatusService = paymentStatusService;
     }
 
+    @Transactional
     public User createAdmin(final CreateAdminRequest request) {
         validateAdminRequest(request);
         ensureEmailAvailable(request.getEmail());
@@ -48,6 +65,7 @@ public class UserService {
         user.setResidence(residence);
         user.setRole(UserRole.ADMIN);
         user.setStatus(UserStatus.ACTIVE);
+        user.setStatutPaiement(StatutPaiement.EN_RETARD);
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
 
@@ -58,11 +76,15 @@ public class UserService {
         AuthenticatedUser actor = requireAuthenticatedUser(authenticatedUser);
 
         if (actor.role() == UserRole.SUPER_ADMIN) {
-            return userRepository.findAll();
+            return userRepository.findAll().stream()
+                    .map(this::refreshPaymentStatusIfConfigured)
+                    .toList();
         }
         if (actor.role() == UserRole.ADMIN) {
             requireResidenceId(actor.residenceId());
-            return userRepository.findAllByResidence_Id(actor.residenceId());
+            return userRepository.findAllByResidence_Id(actor.residenceId()).stream()
+                    .map(this::refreshPaymentStatusIfConfigured)
+                    .toList();
         }
 
         throw new AccessDeniedException("Insufficient role to access users");
@@ -77,11 +99,15 @@ public class UserService {
     public List<User> getPendingUsers(final AuthenticatedUser authenticatedUser) {
         AuthenticatedUser actor = requireAuthenticatedUser(authenticatedUser);
         if (actor.role() == UserRole.SUPER_ADMIN) {
-            return userRepository.findAllByStatus(UserStatus.PENDING);
+            return userRepository.findAllByStatus(UserStatus.PENDING).stream()
+                    .map(this::refreshPaymentStatusIfConfigured)
+                    .toList();
         }
         if (actor.role() == UserRole.ADMIN) {
             requireResidenceId(actor.residenceId());
-            return userRepository.findAllByResidence_IdAndStatus(actor.residenceId(), UserStatus.PENDING);
+            return userRepository.findAllByResidence_IdAndStatus(actor.residenceId(), UserStatus.PENDING).stream()
+                    .map(this::refreshPaymentStatusIfConfigured)
+                    .toList();
         }
         throw new AccessDeniedException("Insufficient role to access pending users");
     }
@@ -195,5 +221,12 @@ public class UserService {
             return "Votre demande a ete " + action + ". Commentaire: " + request.getComment().trim();
         }
         return "Votre demande a ete " + action + ".";
+    }
+
+    private User refreshPaymentStatusIfConfigured(final User user) {
+        if (paymentStatusService == null) {
+            return user;
+        }
+        return paymentStatusService.refreshPaymentStatus(user);
     }
 }

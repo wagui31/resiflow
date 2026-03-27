@@ -1,0 +1,91 @@
+package com.resiflow.service;
+
+import com.resiflow.dto.CreatePaiementRequest;
+import com.resiflow.entity.Paiement;
+import com.resiflow.entity.Residence;
+import com.resiflow.entity.User;
+import com.resiflow.repository.PaiementRepository;
+import com.resiflow.security.AuthenticatedUser;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class PaiementService {
+
+    private final PaiementRepository paiementRepository;
+    private final ResidenceAccessService residenceAccessService;
+    private final PaymentStatusService paymentStatusService;
+    private final TransactionCagnotteService transactionCagnotteService;
+
+    public PaiementService(
+            final PaiementRepository paiementRepository,
+            final ResidenceAccessService residenceAccessService,
+            final PaymentStatusService paymentStatusService,
+            final TransactionCagnotteService transactionCagnotteService
+    ) {
+        this.paiementRepository = paiementRepository;
+        this.residenceAccessService = residenceAccessService;
+        this.paymentStatusService = paymentStatusService;
+        this.transactionCagnotteService = transactionCagnotteService;
+    }
+
+    @Transactional
+    public Paiement createPaiement(final CreatePaiementRequest request, final AuthenticatedUser authenticatedUser) {
+        validateCreateRequest(request);
+
+        Residence residence = residenceAccessService.getResidenceForAdmin(request.getResidenceId(), authenticatedUser);
+        User utilisateur = residenceAccessService.getUserForRead(request.getUtilisateurId(), authenticatedUser);
+        if (!residence.getId().equals(utilisateur.getResidenceId())) {
+            throw new IllegalArgumentException("User does not belong to the selected residence");
+        }
+
+        Paiement paiement = new Paiement();
+        paiement.setUtilisateur(utilisateur);
+        paiement.setResidence(residence);
+        paiement.setNombreMois(request.getNombreMois());
+        paiement.setMontantMensuel(residence.getMontantMensuel());
+        paiement.setMontantTotal(residence.getMontantMensuel().multiply(BigDecimal.valueOf(request.getNombreMois())));
+        paiement.setDateDebut(request.getDateDebut());
+        paiement.setDateFin(request.getDateDebut().plusMonths(request.getNombreMois()));
+        paiement.setDatePaiement(LocalDateTime.now());
+        paiement.setCreePar(residenceAccessService.getRequiredActor(authenticatedUser));
+
+        Paiement savedPaiement = paiementRepository.save(paiement);
+        transactionCagnotteService.createContributionTransaction(savedPaiement);
+        paymentStatusService.refreshPaymentStatus(utilisateur);
+        return savedPaiement;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Paiement> getPaiementsByUtilisateur(final Long userId, final AuthenticatedUser authenticatedUser) {
+        User user = residenceAccessService.getUserForRead(userId, authenticatedUser);
+        return paiementRepository.findAllByUtilisateur_IdOrderByDatePaiementDesc(user.getId());
+    }
+
+    @Transactional(readOnly = true)
+    public List<Paiement> getPaiementsByResidence(final Long residenceId, final AuthenticatedUser authenticatedUser) {
+        residenceAccessService.getResidenceForAdmin(residenceId, authenticatedUser);
+        return paiementRepository.findAllByResidence_IdOrderByDatePaiementDesc(residenceId);
+    }
+
+    private void validateCreateRequest(final CreatePaiementRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Create paiement request must not be null");
+        }
+        if (request.getUtilisateurId() == null) {
+            throw new IllegalArgumentException("User ID must not be null");
+        }
+        if (request.getResidenceId() == null) {
+            throw new IllegalArgumentException("Residence ID must not be null");
+        }
+        if (request.getNombreMois() == null || request.getNombreMois() <= 0) {
+            throw new IllegalArgumentException("Nombre de mois must be greater than zero");
+        }
+        if (request.getDateDebut() == null) {
+            throw new IllegalArgumentException("Date debut must not be null");
+        }
+    }
+}

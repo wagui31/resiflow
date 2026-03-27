@@ -2,6 +2,7 @@ package com.resiflow.dto;
 
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
+import com.resiflow.entity.StatutPaiement;
 import com.resiflow.entity.UserStatus;
 import java.time.LocalDateTime;
 
@@ -14,10 +15,11 @@ public class CreateUserResponse extends UserResponse {
             final String residenceCode,
             final UserRole role,
             final UserStatus status,
+            final StatutPaiement statutPaiement,
             final LocalDateTime createdAt,
             final LocalDateTime updatedAt
     ) {
-        super(id, email, residenceId, residenceCode, role, status, createdAt, updatedAt);
+        super(id, email, residenceId, residenceCode, role, status, statutPaiement, createdAt, updatedAt);
     }
 
     public static CreateUserResponse fromUser(final User user) {
@@ -28,6 +30,7 @@ public class CreateUserResponse extends UserResponse {
                 user.getResidence() == null ? null : user.getResidence().getCode(),
                 user.getRole(),
                 user.getStatus(),
+                user.getStatutPaiement(),
                 user.getCreatedAt(),
                 user.getUpdatedAt()
         );

@@ -42,6 +42,10 @@ public class User {
     @Column(nullable = false)
     private UserStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "statut_paiement", nullable = false)
+    private StatutPaiement statutPaiement;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -109,6 +113,14 @@ public class User {
 
     public void setStatus(final UserStatus status) {
         this.status = status;
+    }
+
+    public StatutPaiement getStatutPaiement() {
+        return statutPaiement;
+    }
+
+    public void setStatutPaiement(final StatutPaiement statutPaiement) {
+        this.statutPaiement = statutPaiement;
     }
 
     public LocalDateTime getCreatedAt() {

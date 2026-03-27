@@ -1,5 +1,6 @@
 package com.resiflow.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
@@ -27,6 +28,9 @@ public class Residence {
 
     @Column(nullable = false, unique = true)
     private String code;
+
+    @Column(name = "montant_mensuel", nullable = false, precision = 12, scale = 2)
+    private BigDecimal montantMensuel;
 
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
@@ -67,6 +71,14 @@ public class Residence {
 
     public void setCode(final String code) {
         this.code = code;
+    }
+
+    public BigDecimal getMontantMensuel() {
+        return montantMensuel;
+    }
+
+    public void setMontantMensuel(final BigDecimal montantMensuel) {
+        this.montantMensuel = montantMensuel;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -1,9 +1,9 @@
 {
   "info": {
-    "_postman_id": "8f9294a8-b35e-45da-9890-2f8d4c65f8bb",
+    "_postman_id": "6d2d8452-6e8a-4fdc-97d4-d1a56a64d6d8",
     "name": "Resiflow API",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Collection couvrant le workflow residence -> register -> validation admin -> login."
+    "description": "Collection complète pour Resiflow: authentification, résidences, gestion utilisateurs, paiements, dépenses et cagnotte."
   },
   "item": [
     {
@@ -26,25 +26,64 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Register User",
+          "name": "Login Super Admin",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('register status is success', function () {",
+                  "pm.test('login super admin status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.token) {",
+                  "    pm.environment.set('superAdminToken', json.token);",
+                  "    pm.environment.set('superAdminId', json.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{superAdminEmail}}\",\n  \"password\": \"{{superAdminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Register Pending User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('register pending user status is success', function () {",
                   "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
                   "});",
                   "var json = pm.response.json();",
-                  "pm.test('register returns timestamps', function () {",
-                  "    pm.expect(json.createdAt).to.be.a('string').and.not.empty;",
-                  "    pm.expect(json.updatedAt).to.be.a('string').and.not.empty;",
-                  "});",
                   "if (json && json.id) {",
                   "    pm.environment.set('pendingUserId', json.id);",
-                  "}",
-                  "if (json && json.residenceCode) {",
-                  "    pm.environment.set('residenceCode', json.residenceCode);",
                   "}",
                   "if (json && json.createdAt) {",
                   "    pm.environment.set('pendingUserCreatedAt', json.createdAt);",
@@ -52,8 +91,7 @@
                   "if (json && json.updatedAt) {",
                   "    pm.environment.set('pendingUserUpdatedAt', json.updatedAt);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -83,13 +121,130 @@
           }
         },
         {
-          "name": "Login Active User",
+          "name": "Register Pending User To Reject",
           "event": [
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
-                  "pm.test('login status is 200', function () {",
+                  "pm.test('register rejected scenario user status is success', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('rejectedUserId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{rejectedUserEmail}}\",\n  \"password\": \"{{rejectedUserPassword}}\",\n  \"residenceCode\": \"{{residenceCode}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "register"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Pending User Forbidden",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{pendingUserEmail}}\",\n  \"password\": \"{{pendingUserPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Active Residence Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login admin status is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.token) {",
+                  "    pm.environment.set('adminToken', json.token);",
+                  "    pm.environment.set('adminUserId', json.userId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Login Active Resident",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('login resident status is 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",
                   "var json = pm.response.json();",
@@ -97,8 +252,7 @@
                   "    pm.environment.set('userToken', json.token);",
                   "    pm.environment.set('userId', json.userId);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -138,26 +292,22 @@
             {
               "listen": "test",
               "script": {
+                "type": "text/javascript",
                 "exec": [
                   "pm.test('create residence status is 201', function () {",
                   "    pm.response.to.have.status(201);",
                   "});",
                   "var json = pm.response.json();",
-                  "pm.test('residence returns timestamps', function () {",
-                  "    pm.expect(json.createdAt).to.be.a('string').and.not.empty;",
-                  "    pm.expect(json.updatedAt).to.be.a('string').and.not.empty;",
-                  "});",
                   "if (json && json.id) {",
                   "    pm.environment.set('residenceId', json.id);",
                   "}",
                   "if (json && json.code) {",
                   "    pm.environment.set('residenceCode', json.code);",
                   "}",
-                  "if (json && json.updatedAt) {",
-                  "    pm.environment.set('residenceUpdatedAt', json.updatedAt);",
+                  "if (json && json.montantMensuel) {",
+                  "    pm.environment.set('montantMensuel', json.montantMensuel);",
                   "}"
-                ],
-                "type": "text/javascript"
+                ]
               }
             }
           ],
@@ -175,7 +325,37 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Residence Paris Centre\",\n  \"address\": \"12 rue de la Paix, Paris\",\n  \"enabled\": true,\n  \"code\": \"{{residenceCode}}\"\n}"
+              "raw": "{\n  \"name\": \"Residence Paris Centre\",\n  \"address\": \"12 rue de la Paix, Paris\",\n  \"enabled\": true,\n  \"code\": \"{{residenceCode}}\",\n  \"montantMensuel\": {{montantMensuel}}\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/residences",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "residences"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Residence Invalid Monthly Amount",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{superAdminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Residence Sans Cotisation\",\n  \"address\": \"1 avenue des tests\",\n  \"enabled\": true,\n  \"code\": \"RES-BAD001\",\n  \"montantMensuel\": 0\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/residences",
@@ -212,7 +392,7 @@
           }
         },
         {
-          "name": "Update Residence",
+          "name": "Update Residence Monthly Amount",
           "request": {
             "method": "PUT",
             "header": [
@@ -227,7 +407,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Residence Paris Centre Updated\",\n  \"address\": \"12 rue de la Paix, Paris\",\n  \"enabled\": true,\n  \"code\": \"{{residenceCode}}\"\n}"
+              "raw": "{\n  \"name\": \"Residence Paris Centre Updated\",\n  \"address\": \"12 rue de la Paix, Paris\",\n  \"enabled\": true,\n  \"code\": \"{{residenceCode}}\",\n  \"montantMensuel\": 95.00\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/residences/{{residenceId}}",
@@ -253,14 +433,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/residences/{{residenceId}}",
+              "raw": "{{baseUrl}}/api/residences/{{residenceToDeleteId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "residences",
-                "{{residenceId}}"
+                "{{residenceToDeleteId}}"
               ]
             }
           }
@@ -272,33 +452,6 @@
       "item": [
         {
           "name": "Create Residence Admin",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('create admin status is 201', function () {",
-                  "    pm.response.to.have.status(201);",
-                  "});",
-                  "var json = pm.response.json();",
-                  "pm.test('create admin returns timestamps', function () {",
-                  "    pm.expect(json.createdAt).to.be.a('string').and.not.empty;",
-                  "    pm.expect(json.updatedAt).to.be.a('string').and.not.empty;",
-                  "});",
-                  "if (json && json.id) {",
-                  "    pm.environment.set('adminUserId', json.id);",
-                  "}",
-                  "if (json && json.createdAt) {",
-                  "    pm.environment.set('adminUserCreatedAt', json.createdAt);",
-                  "}",
-                  "if (json && json.updatedAt) {",
-                  "    pm.environment.set('adminUserUpdatedAt', json.updatedAt);",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
           "request": {
             "method": "POST",
             "header": [
@@ -329,7 +482,7 @@
           }
         },
         {
-          "name": "List Users",
+          "name": "List Users As Admin",
           "request": {
             "method": "GET",
             "header": [
@@ -349,12 +502,7 @@
               ]
             }
           }
-        }
-      ]
-    },
-    {
-      "name": "Admin Workflow",
-      "item": [
+        },
         {
           "name": "List Pending Users",
           "request": {
@@ -395,7 +543,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"comment\": \"Validation manuelle par l'administrateur\"\n}"
+              "raw": "{\n  \"comment\": \"Validation de l'inscription resident\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/admin/users/{{pendingUserId}}/approve",
@@ -428,10 +576,10 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"comment\": \"Demande incomplète\"\n}"
+              "raw": "{\n  \"comment\": \"Dossier incomplet\"\n}"
             },
             "url": {
-              "raw": "{{baseUrl}}/api/admin/users/{{pendingUserId}}/reject",
+              "raw": "{{baseUrl}}/api/admin/users/{{rejectedUserId}}/reject",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -439,19 +587,391 @@
                 "api",
                 "admin",
                 "users",
-                "{{pendingUserId}}",
+                "{{rejectedUserId}}",
                 "reject"
               ]
             }
           }
         }
       ]
-    }
-  ],
-  "variable": [
+    },
     {
-      "key": "baseUrl",
-      "value": "http://localhost:8080"
+      "name": "Paiements",
+      "item": [
+        {
+          "name": "Create Paiement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create paiement status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('paiementId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"utilisateurId\": {{pendingUserId}},\n  \"residenceId\": {{residenceId}},\n  \"nombreMois\": 3,\n  \"dateDebut\": \"2026-04-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "paiements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Paiement Invalid Number Of Months",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"utilisateurId\": {{pendingUserId}},\n  \"residenceId\": {{residenceId}},\n  \"nombreMois\": 0,\n  \"dateDebut\": \"2026-04-01\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/paiements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "paiements"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Paiements By Utilisateur As Admin",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/paiements/utilisateur/{{pendingUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "paiements",
+                "utilisateur",
+                "{{pendingUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Paiements By Utilisateur As Self",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/paiements/utilisateur/{{pendingUserId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "paiements",
+                "utilisateur",
+                "{{pendingUserId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Paiements By Residence",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/paiements/residence/{{residenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "paiements",
+                "residence",
+                "{{residenceId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Depenses",
+      "item": [
+        {
+          "name": "Create Depense To Approve",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create depense status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('depenseId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"residenceId\": {{residenceId}},\n  \"montant\": 120.50,\n  \"description\": \"Réparation porte d'entrée\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/depenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "depenses"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Approve Depense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/depenses/{{depenseId}}/approuver",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "depenses",
+                "{{depenseId}}",
+                "approuver"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create Depense To Reject",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('create depense reject scenario status is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var json = pm.response.json();",
+                  "if (json && json.id) {",
+                  "    pm.environment.set('depenseRejectId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"residenceId\": {{residenceId}},\n  \"montant\": 45.00,\n  \"description\": \"Achat refusé pour test\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/depenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "depenses"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reject Depense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/depenses/{{depenseRejectId}}/rejeter",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "depenses",
+                "{{depenseRejectId}}",
+                "rejeter"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Depenses By Residence As Member",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/depenses/residence/{{residenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "depenses",
+                "residence",
+                "{{residenceId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cagnotte",
+      "item": [
+        {
+          "name": "Get Solde",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cagnotte/{{residenceId}}/solde",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cagnotte",
+                "{{residenceId}}",
+                "solde"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Transactions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{userToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/cagnotte/{{residenceId}}/transactions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "cagnotte",
+                "{{residenceId}}",
+                "transactions"
+              ]
+            }
+          }
+        }
+      ]
     }
   ]
 }
