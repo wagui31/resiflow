@@ -13,6 +13,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AuthService {
@@ -64,6 +65,7 @@ public class AuthService {
         return new LoginResponse(user.getId(), user.getEmail(), user.getResidenceId(), user.getRole(), token);
     }
 
+    @Transactional
     public User register(final RegisterRequest request) {
         validateRegisterRequest(request);
 
@@ -90,7 +92,7 @@ public class AuthService {
         emailService.sendToAdmins(
                 adminEmails,
                 "Nouvelle demande d'inscription",
-                "Nouvelle demande d'inscription pour " + savedUser.getEmail()
+                "Un nouvel utilisateur a demande l'acces a la residence. Email: " + savedUser.getEmail()
         );
 
         return savedUser;

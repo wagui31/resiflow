@@ -10,6 +10,7 @@ import com.resiflow.repository.UserRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.lang.reflect.Proxy;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -73,11 +74,12 @@ class UserServiceTest {
     void approveUserActivatesPendingUserInSameResidence() {
         AtomicReference<User> savedUserRef = new AtomicReference<>();
         User pendingUser = buildUser(14L, "pending@example.com", 7L, UserRole.USER, UserStatus.PENDING);
+        RecordingEmailService emailService = new RecordingEmailService();
         UserService userService = new UserService(
                 repositoryProxy(savedUserRef, Optional.of(pendingUser), Collections.emptyList(), Collections.emptyList()),
                 passwordEncoder,
                 residenceServiceStub(),
-                new EmailService()
+                emailService
         );
 
         User result = userService.approveUser(
@@ -89,6 +91,28 @@ class UserServiceTest {
         assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.ACTIVE);
         assertThat(savedUserRef.get().getUpdatedAt()).isNotNull();
         assertThat(result.getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(emailService.userRecipient).isEqualTo("pending@example.com");
+        assertThat(emailService.userSubject).isEqualTo("Votre compte ResiFlow est valide");
+        assertThat(emailService.userBody).contains("Vous pouvez vous connecter");
+    }
+
+    @Test
+    void approveUserRejectsAlreadyActiveUser() {
+        User activeUser = buildUser(14L, "active@example.com", 7L, UserRole.USER, UserStatus.ACTIVE);
+        UserService userService = new UserService(
+                repositoryProxy(new AtomicReference<>(), Optional.of(activeUser), Collections.emptyList(), Collections.emptyList()),
+                passwordEncoder,
+                residenceServiceStub(),
+                new EmailService()
+        );
+
+        assertThatThrownBy(() -> userService.approveUser(
+                14L,
+                new AuthenticatedUser(10L, "admin@example.com", 7L, UserRole.ADMIN),
+                new AdminUserActionRequest()
+        ))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Compte déjà validé");
     }
 
     @Test
@@ -148,6 +172,10 @@ class UserServiceTest {
                     if ("findByIdAndResidence_Id".equals(method.getName()) || "findById".equals(method.getName())) {
                         return managedUser;
                     }
+                    if ("findByIdAndResidence_IdForUpdate".equals(method.getName())
+                            || "findByIdForUpdate".equals(method.getName())) {
+                        return managedUser;
+                    }
                     if ("toString".equals(method.getName())) {
                         return "UserRepositoryTestProxy";
                     }
@@ -190,5 +218,26 @@ class UserServiceTest {
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
         return user;
+    }
+
+    private static final class RecordingEmailService extends EmailService {
+
+        private final List<String> adminRecipients = new ArrayList<>();
+        private String userRecipient;
+        private String userSubject;
+        private String userBody;
+
+        @Override
+        public void sendToAdmins(final List<String> recipients, final String subject, final String body) {
+            adminRecipients.clear();
+            adminRecipients.addAll(recipients);
+        }
+
+        @Override
+        public void sendToUser(final String recipient, final String subject, final String body) {
+            userRecipient = recipient;
+            userSubject = subject;
+            userBody = body;
+        }
     }
 }

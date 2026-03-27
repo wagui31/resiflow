@@ -112,25 +112,33 @@ public class UserService {
         throw new AccessDeniedException("Insufficient role to access pending users");
     }
 
+    @Transactional
     public User approveUser(
             final Long userId,
             final AuthenticatedUser authenticatedUser,
             final AdminUserActionRequest request
     ) {
         User user = getManageableUser(userId, authenticatedUser);
+        ensurePendingStatusForApproval(user);
         user.setStatus(UserStatus.ACTIVE);
         user.setUpdatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
-        emailService.sendToUser(savedUser.getEmail(), "Votre compte est activé", buildActionBody("approuve", request));
+        emailService.sendToUser(
+                savedUser.getEmail(),
+                "Votre compte ResiFlow est valide",
+                buildApprovalBody(request)
+        );
         return savedUser;
     }
 
+    @Transactional
     public User rejectUser(
             final Long userId,
             final AuthenticatedUser authenticatedUser,
             final AdminUserActionRequest request
     ) {
         User user = getManageableUser(userId, authenticatedUser);
+        ensurePendingStatusForRejection(user);
         user.setStatus(UserStatus.REJECTED);
         user.setUpdatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
@@ -190,7 +198,7 @@ public class UserService {
         AuthenticatedUser actor = requireAuthenticatedUser(authenticatedUser);
 
         if (actor.role() == UserRole.SUPER_ADMIN) {
-            User user = userRepository.findById(userId)
+            User user = userRepository.findByIdForUpdate(userId)
                     .orElseThrow(() -> new NoSuchElementException("User not found: " + userId));
             ensureAdminActionAllowed(actor, user);
             return user;
@@ -198,7 +206,7 @@ public class UserService {
 
         if (actor.role() == UserRole.ADMIN) {
             requireResidenceId(actor.residenceId());
-            User user = userRepository.findByIdAndResidence_Id(userId, actor.residenceId())
+            User user = userRepository.findByIdAndResidence_IdForUpdate(userId, actor.residenceId())
                     .orElseThrow(() -> new NoSuchElementException("User not found in residence: " + userId));
             ensureAdminActionAllowed(actor, user);
             return user;
@@ -221,6 +229,32 @@ public class UserService {
             return "Votre demande a ete " + action + ". Commentaire: " + request.getComment().trim();
         }
         return "Votre demande a ete " + action + ".";
+    }
+
+    private String buildApprovalBody(final AdminUserActionRequest request) {
+        StringBuilder body = new StringBuilder("Votre compte est maintenant valide. Vous pouvez vous connecter a ResiFlow.");
+        if (request != null && !isBlank(request.getComment())) {
+            body.append(" Commentaire: ").append(request.getComment().trim());
+        }
+        return body.toString();
+    }
+
+    private void ensurePendingStatusForApproval(final User user) {
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new IllegalStateException("Compte déjà validé");
+        }
+        if (user.getStatus() == UserStatus.REJECTED) {
+            throw new IllegalStateException("Compte déjà refusé");
+        }
+    }
+
+    private void ensurePendingStatusForRejection(final User user) {
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new IllegalStateException("Compte déjà validé");
+        }
+        if (user.getStatus() == UserStatus.REJECTED) {
+            throw new IllegalStateException("Compte déjà refusé");
+        }
     }
 
     private User refreshPaymentStatusIfConfigured(final User user) {

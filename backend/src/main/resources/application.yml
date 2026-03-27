@@ -1,4 +1,6 @@
 spring:
+  config:
+    import: optional:file:.env[.properties],optional:file:backend/.env[.properties]
   application:
     name: resiflow
   datasource:
@@ -10,6 +12,17 @@ spring:
       ddl-auto: validate
   flyway:
     enabled: true
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:587}
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH:${SPRING_MAIL_SMTP_AUTH:true}}
+          starttls:
+            enable: ${SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE:${SPRING_MAIL_SMTP_STARTTLS_ENABLE:true}}
 
 logging:
   level:
@@ -22,3 +35,6 @@ app:
   jwt:
     secret: ${APP_JWT_SECRET:Zm9yLWRldmVsb3BtZW50LW9ubHktcmVzaWZsb3ctand0LXNlY3JldC1rZXktMzItYnl0ZXM=}
     expiration-ms: ${APP_JWT_EXPIRATION_MS:3600000}
+  mail:
+    enabled: ${APP_MAIL_ENABLED:false}
+    from: ${APP_MAIL_FROM:noreply@resiflow.local}

@@ -13,6 +13,7 @@ import com.resiflow.security.JwtService;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -186,12 +187,13 @@ class AuthServiceTest {
     @Test
     void registerCreatesPendingResidenceUser() {
         AtomicReference<User> savedUserRef = new AtomicReference<>();
+        RecordingEmailService emailService = new RecordingEmailService();
         AuthService authService = new AuthService(
                 repositoryProxy(Optional.empty(), savedUserRef, List.of("admin@example.com")),
                 residenceServiceStub(),
                 new JwtService(new JwtProperties(SECRET, 3600000)),
                 passwordEncoder,
-                new EmailService()
+                emailService
         );
 
         RegisterRequest request = new RegisterRequest();
@@ -210,6 +212,9 @@ class AuthServiceTest {
         assertThat(savedUserRef.get().getUpdatedAt()).isNotNull();
         assertThat(savedUserRef.get().getUpdatedAt()).isEqualTo(savedUserRef.get().getCreatedAt());
         assertThat(result.getId()).isEqualTo(99L);
+        assertThat(emailService.adminRecipients).containsExactly("admin@example.com");
+        assertThat(emailService.adminSubject).isEqualTo("Nouvelle demande d'inscription");
+        assertThat(emailService.adminBody).contains("resident@example.com");
     }
 
     private UserRepository repositoryProxy(
@@ -278,5 +283,20 @@ class AuthServiceTest {
                 return residence;
             }
         };
+    }
+
+    private static final class RecordingEmailService extends EmailService {
+
+        private final List<String> adminRecipients = new ArrayList<>();
+        private String adminSubject;
+        private String adminBody;
+
+        @Override
+        public void sendToAdmins(final List<String> recipients, final String subject, final String body) {
+            adminRecipients.clear();
+            adminRecipients.addAll(recipients);
+            adminSubject = subject;
+            adminBody = body;
+        }
     }
 }
