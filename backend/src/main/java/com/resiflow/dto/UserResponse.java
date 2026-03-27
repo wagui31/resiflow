@@ -3,6 +3,7 @@ package com.resiflow.dto;
 import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
 import com.resiflow.entity.UserStatus;
+import java.time.LocalDateTime;
 
 public class UserResponse {
 
@@ -12,6 +13,8 @@ public class UserResponse {
     private final String residenceCode;
     private final UserRole role;
     private final UserStatus status;
+    private final LocalDateTime createdAt;
+    private final LocalDateTime updatedAt;
 
     public UserResponse(
             final Long id,
@@ -19,7 +22,9 @@ public class UserResponse {
             final Long residenceId,
             final String residenceCode,
             final UserRole role,
-            final UserStatus status
+            final UserStatus status,
+            final LocalDateTime createdAt,
+            final LocalDateTime updatedAt
     ) {
         this.id = id;
         this.email = email;
@@ -27,6 +32,8 @@ public class UserResponse {
         this.residenceCode = residenceCode;
         this.role = role;
         this.status = status;
+        this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
     }
 
     public static UserResponse fromUser(final User user) {
@@ -36,7 +43,9 @@ public class UserResponse {
                 user.getResidenceId(),
                 user.getResidence() == null ? null : user.getResidence().getCode(),
                 user.getRole(),
-                user.getStatus()
+                user.getStatus(),
+                user.getCreatedAt(),
+                user.getUpdatedAt()
         );
     }
 
@@ -62,5 +71,13 @@ public class UserResponse {
 
     public UserStatus getStatus() {
         return status;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 }

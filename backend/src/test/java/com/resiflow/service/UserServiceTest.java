@@ -9,6 +9,7 @@ import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.lang.reflect.Proxy;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -47,6 +48,9 @@ class UserServiceTest {
         assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.ACTIVE);
         assertThat(savedUserRef.get().getResidenceId()).isEqualTo(7L);
         assertThat(passwordEncoder.matches("secret", savedUserRef.get().getPassword())).isTrue();
+        assertThat(savedUserRef.get().getCreatedAt()).isNotNull();
+        assertThat(savedUserRef.get().getUpdatedAt()).isNotNull();
+        assertThat(savedUserRef.get().getUpdatedAt()).isEqualTo(savedUserRef.get().getCreatedAt());
         assertThat(result.getId()).isEqualTo(1L);
     }
 
@@ -83,6 +87,7 @@ class UserServiceTest {
         );
 
         assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.ACTIVE);
+        assertThat(savedUserRef.get().getUpdatedAt()).isNotNull();
         assertThat(result.getStatus()).isEqualTo(UserStatus.ACTIVE);
     }
 
@@ -126,6 +131,8 @@ class UserServiceTest {
                         savedUser.setResidence(user.getResidence());
                         savedUser.setRole(user.getRole());
                         savedUser.setStatus(user.getStatus());
+                        savedUser.setCreatedAt(user.getCreatedAt());
+                        savedUser.setUpdatedAt(user.getUpdatedAt());
                         return savedUser;
                     }
                     if ("existsByEmail".equals(method.getName())) {
@@ -179,6 +186,9 @@ class UserServiceTest {
         user.setResidenceId(residenceId);
         user.setRole(role);
         user.setStatus(status);
+        LocalDateTime now = LocalDateTime.now().minusDays(1);
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
         return user;
     }
 }

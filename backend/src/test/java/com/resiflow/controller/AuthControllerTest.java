@@ -11,6 +11,7 @@ import com.resiflow.entity.UserStatus;
 import com.resiflow.service.AuthService;
 import com.resiflow.service.EmailService;
 import com.resiflow.service.InvalidCredentialsException;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -62,6 +63,9 @@ class AuthControllerTest {
                 user.setResidence(residence);
                 user.setRole(UserRole.USER);
                 user.setStatus(UserStatus.PENDING);
+                LocalDateTime now = LocalDateTime.now();
+                user.setCreatedAt(now);
+                user.setUpdatedAt(now);
                 return user;
             }
         };
@@ -130,6 +134,8 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.residenceId").value(7L))
                 .andExpect(jsonPath("$.residenceCode").value("RES-ABC123"))
                 .andExpect(jsonPath("$.role").value("USER"))
-                .andExpect(jsonPath("$.status").value("PENDING"));
+                .andExpect(jsonPath("$.status").value("PENDING"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
     }
 }

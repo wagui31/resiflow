@@ -10,6 +10,7 @@ public class ResidenceResponse {
     private final String address;
     private final String code;
     private final LocalDateTime createdAt;
+    private final LocalDateTime updatedAt;
     private final Boolean enabled;
 
     public ResidenceResponse(
@@ -18,6 +19,7 @@ public class ResidenceResponse {
             final String address,
             final String code,
             final LocalDateTime createdAt,
+            final LocalDateTime updatedAt,
             final Boolean enabled
     ) {
         this.id = id;
@@ -25,6 +27,7 @@ public class ResidenceResponse {
         this.address = address;
         this.code = code;
         this.createdAt = createdAt;
+        this.updatedAt = updatedAt;
         this.enabled = enabled;
     }
 
@@ -35,6 +38,7 @@ public class ResidenceResponse {
                 residence.getAddress(),
                 residence.getCode(),
                 residence.getCreatedAt(),
+                residence.getUpdatedAt(),
                 residence.getEnabled()
         );
     }
@@ -57,6 +61,10 @@ public class ResidenceResponse {
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
     }
 
     public Boolean getEnabled() {

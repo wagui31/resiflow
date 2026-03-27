@@ -12,6 +12,7 @@ import com.resiflow.security.JwtProperties;
 import com.resiflow.security.JwtService;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
@@ -205,6 +206,9 @@ class AuthServiceTest {
         assertThat(savedUserRef.get().getRole()).isEqualTo(UserRole.USER);
         assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.PENDING);
         assertThat(savedUserRef.get().getResidence().getCode()).isEqualTo("RES-ABC123");
+        assertThat(savedUserRef.get().getCreatedAt()).isNotNull();
+        assertThat(savedUserRef.get().getUpdatedAt()).isNotNull();
+        assertThat(savedUserRef.get().getUpdatedAt()).isEqualTo(savedUserRef.get().getCreatedAt());
         assertThat(result.getId()).isEqualTo(99L);
     }
 
@@ -230,6 +234,8 @@ class AuthServiceTest {
                 saved.setResidence(user.getResidence());
                 saved.setRole(user.getRole());
                 saved.setStatus(user.getStatus());
+                saved.setCreatedAt(user.getCreatedAt());
+                saved.setUpdatedAt(user.getUpdatedAt());
                 return saved;
             }
             if ("findAllByResidence_IdAndRole".equals(method.getName())) {
@@ -266,6 +272,9 @@ class AuthServiceTest {
                 Residence residence = new Residence();
                 residence.setId(12L);
                 residence.setCode(residenceCode);
+                LocalDateTime now = LocalDateTime.now().minusDays(1);
+                residence.setCreatedAt(now);
+                residence.setUpdatedAt(now);
                 return residence;
             }
         };

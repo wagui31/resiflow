@@ -6,6 +6,7 @@ import com.resiflow.entity.User;
 import com.resiflow.entity.UserRole;
 import com.resiflow.entity.UserStatus;
 import com.resiflow.service.UserService;
+import java.time.LocalDateTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
@@ -40,6 +41,9 @@ class UserControllerTest {
                 user.setResidenceId(request.getResidenceId());
                 user.setRole(UserRole.ADMIN);
                 user.setStatus(UserStatus.ACTIVE);
+                LocalDateTime now = LocalDateTime.now();
+                user.setCreatedAt(now);
+                user.setUpdatedAt(now);
                 return user;
             }
         };
@@ -64,7 +68,9 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.email").value("admin@example.com"))
                 .andExpect(jsonPath("$.residenceId").value(7L))
                 .andExpect(jsonPath("$.role").value("ADMIN"))
-                .andExpect(jsonPath("$.status").value("ACTIVE"));
+                .andExpect(jsonPath("$.status").value("ACTIVE"))
+                .andExpect(jsonPath("$.createdAt").isNotEmpty())
+                .andExpect(jsonPath("$.updatedAt").isNotEmpty());
     }
 
     @Test

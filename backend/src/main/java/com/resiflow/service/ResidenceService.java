@@ -22,11 +22,13 @@ public class ResidenceService {
         validateCreateRequest(request);
 
         Residence residence = new Residence();
+        LocalDateTime now = LocalDateTime.now();
         residence.setName(request.getName().trim());
         residence.setAddress(request.getAddress().trim());
         residence.setCode(resolveResidenceCode(request.getCode(), null));
         residence.setEnabled(request.getEnabled() == null || request.getEnabled());
-        residence.setCreatedAt(LocalDateTime.now());
+        residence.setCreatedAt(now);
+        residence.setUpdatedAt(now);
 
         return residenceRepository.save(residence);
     }
@@ -45,6 +47,7 @@ public class ResidenceService {
             residence.setCode(resolveResidenceCode(request.getCode(), residenceId));
         }
         residence.setEnabled(request.getEnabled() == null || request.getEnabled());
+        residence.setUpdatedAt(LocalDateTime.now());
 
         return residenceRepository.save(residence);
     }

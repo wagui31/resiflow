@@ -8,6 +8,7 @@ import com.resiflow.entity.UserRole;
 import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.JwtService;
+import java.time.LocalDateTime;
 import java.util.List;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -69,11 +70,14 @@ public class AuthService {
         ensureEmailAvailable(email);
 
         User user = new User();
+        LocalDateTime now = LocalDateTime.now();
         user.setEmail(email);
         user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         user.setResidence(residenceService.getRequiredResidenceByCode(request.getResidenceCode().trim().toUpperCase()));
         user.setRole(UserRole.USER);
         user.setStatus(UserStatus.PENDING);
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
 
         User savedUser = userRepository.save(user);
 

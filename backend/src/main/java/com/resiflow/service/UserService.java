@@ -8,6 +8,7 @@ import com.resiflow.entity.UserRole;
 import com.resiflow.entity.UserStatus;
 import com.resiflow.repository.UserRepository;
 import com.resiflow.security.AuthenticatedUser;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
@@ -41,11 +42,14 @@ public class UserService {
         Residence residence = residenceService.getRequiredResidence(request.getResidenceId());
 
         User user = new User();
+        LocalDateTime now = LocalDateTime.now();
         user.setEmail(request.getEmail().trim());
         user.setPassword(passwordEncoder.encode(request.getPassword().trim()));
         user.setResidence(residence);
         user.setRole(UserRole.ADMIN);
         user.setStatus(UserStatus.ACTIVE);
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
 
         return userRepository.save(user);
     }
@@ -89,6 +93,7 @@ public class UserService {
     ) {
         User user = getManageableUser(userId, authenticatedUser);
         user.setStatus(UserStatus.ACTIVE);
+        user.setUpdatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
         emailService.sendToUser(savedUser.getEmail(), "Votre compte est activé", buildActionBody("approuve", request));
         return savedUser;
@@ -101,6 +106,7 @@ public class UserService {
     ) {
         User user = getManageableUser(userId, authenticatedUser);
         user.setStatus(UserStatus.REJECTED);
+        user.setUpdatedAt(LocalDateTime.now());
         User savedUser = userRepository.save(user);
         emailService.sendToUser(savedUser.getEmail(), "Votre demande a été refusée", buildActionBody("rejete", request));
         return savedUser;
