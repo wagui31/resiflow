@@ -40,6 +40,9 @@ public class VoteUtilisateur {
     @Column(nullable = false)
     private VoteChoix choix;
 
+    @Column
+    private String commentaire;
+
     @Column(name = "date_vote", nullable = false)
     private LocalDateTime dateVote;
 
@@ -73,6 +76,14 @@ public class VoteUtilisateur {
 
     public void setChoix(final VoteChoix choix) {
         this.choix = choix;
+    }
+
+    public String getCommentaire() {
+        return commentaire;
+    }
+
+    public void setCommentaire(final String commentaire) {
+        this.commentaire = commentaire;
     }
 
     public LocalDateTime getDateVote() {

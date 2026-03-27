@@ -3,6 +3,7 @@ package com.resiflow.controller;
 import com.resiflow.dto.DepenseResponse;
 import com.resiflow.dto.CreateVoteRequest;
 import com.resiflow.dto.VoteActionRequest;
+import com.resiflow.dto.VoteDetailsResponse;
 import com.resiflow.dto.VoteResponse;
 import com.resiflow.dto.VoteResultResponse;
 import com.resiflow.security.AuthenticatedUser;
@@ -125,6 +126,16 @@ public class VoteController {
     ) {
         AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
         return ResponseEntity.ok(voteService.getVoteResult(id, authenticatedUser));
+    }
+
+    @GetMapping("/{id}/details")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<VoteDetailsResponse> getVoteDetails(
+            @PathVariable final Long id,
+            final Authentication authentication
+    ) {
+        AuthenticatedUser authenticatedUser = (AuthenticatedUser) authentication.getPrincipal();
+        return ResponseEntity.ok(voteService.getVoteDetails(id, authenticatedUser));
     }
 
     @PostMapping("/{id}/creer-depense")

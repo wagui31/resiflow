@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 public class VoteActionRequest {
 
     private String choix;
+    private String commentaire;
     private LocalDateTime nouvelleDateFin;
     private BigDecimal montant;
 
@@ -15,6 +16,14 @@ public class VoteActionRequest {
 
     public void setChoix(final String choix) {
         this.choix = choix;
+    }
+
+    public String getCommentaire() {
+        return commentaire;
+    }
+
+    public void setCommentaire(final String commentaire) {
+        this.commentaire = commentaire;
     }
 
     public LocalDateTime getNouvelleDateFin() {

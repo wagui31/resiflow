@@ -3,7 +3,9 @@ package com.resiflow.service;
 import com.resiflow.dto.DepenseResponse;
 import com.resiflow.dto.CreateVoteRequest;
 import com.resiflow.dto.VoteActionRequest;
+import com.resiflow.dto.VoteDetailsResponse;
 import com.resiflow.dto.VoteResultResponse;
+import com.resiflow.dto.VoteUtilisateurDetailResponse;
 import com.resiflow.entity.Depense;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.User;
@@ -102,6 +104,7 @@ public class VoteService {
         voteUtilisateur.setVote(vote);
         voteUtilisateur.setUtilisateur(actor);
         voteUtilisateur.setChoix(parseChoix(request.getChoix()));
+        voteUtilisateur.setCommentaire(normalizeCommentaire(request.getCommentaire()));
         voteUtilisateur.setDateVote(LocalDateTime.now());
         voteUtilisateurRepository.save(voteUtilisateur);
 
@@ -189,6 +192,20 @@ public class VoteService {
         ensureMemberAccess(vote, authenticatedUser);
         refreshVoteStatusIfExpired(vote);
         return buildResult(vote);
+    }
+
+    @Transactional(readOnly = true)
+    public VoteDetailsResponse getVoteDetails(final Long voteId, final AuthenticatedUser authenticatedUser) {
+        Vote vote = getRequiredVote(voteId);
+        ensureMemberAccess(vote, authenticatedUser);
+
+        List<VoteUtilisateurDetailResponse> votesUtilisateurs = voteUtilisateurRepository
+                .findAllByVote_IdOrderByDateVoteAsc(voteId)
+                .stream()
+                .map(VoteUtilisateurDetailResponse::fromEntity)
+                .toList();
+
+        return new VoteDetailsResponse(voteId, votesUtilisateurs);
     }
 
     @Transactional
@@ -317,5 +334,9 @@ public class VoteService {
 
     private boolean isBlank(final String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String normalizeCommentaire(final String commentaire) {
+        return isBlank(commentaire) ? null : commentaire.trim();
     }
 }

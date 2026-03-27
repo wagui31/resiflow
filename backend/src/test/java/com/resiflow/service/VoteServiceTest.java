@@ -1,6 +1,7 @@
 package com.resiflow.service;
 
 import com.resiflow.dto.VoteActionRequest;
+import com.resiflow.dto.VoteDetailsResponse;
 import com.resiflow.dto.VoteResultResponse;
 import com.resiflow.entity.Residence;
 import com.resiflow.entity.User;
@@ -40,11 +41,13 @@ class VoteServiceTest {
 
         VoteActionRequest request = new VoteActionRequest();
         request.setChoix(" neutre ");
+        request.setCommentaire("  Avis neutre  ");
 
         voteService.voter(10L, request, new AuthenticatedUser(21L, "user@example.com", 7L, UserRole.USER));
 
         assertThat(savedVoteRef.get()).isNotNull();
         assertThat(savedVoteRef.get().getChoix()).isEqualTo(VoteChoix.NEUTRE);
+        assertThat(savedVoteRef.get().getCommentaire()).isEqualTo("Avis neutre");
     }
 
     @Test
@@ -88,6 +91,36 @@ class VoteServiceTest {
         assertThat(result.getStatut()).isEqualTo(VoteStatut.VALIDE);
         assertThat(savedVoteRef.get()).isNotNull();
         assertThat(savedVoteRef.get().getStatut()).isEqualTo(VoteStatut.VALIDE);
+    }
+
+    @Test
+    void getVoteDetailsReturnsChoiceAndCommentaire() {
+        Vote vote = buildVote(10L, 7L, LocalDateTime.now().plusDays(1), VoteStatut.OUVERT);
+        VoteUtilisateur voteUtilisateur = new VoteUtilisateur();
+        voteUtilisateur.setVote(vote);
+        voteUtilisateur.setUtilisateur(buildUserWithEmail(21L, 7L, "user@example.com"));
+        voteUtilisateur.setChoix(VoteChoix.POUR);
+        voteUtilisateur.setCommentaire("Bon pour moi");
+        voteUtilisateur.setDateVote(LocalDateTime.now().minusHours(1));
+
+        VoteService voteService = new VoteService(
+                voteRepositoryProxy(vote, new AtomicReference<>()),
+                voteUtilisateurRepositoryProxy(new AtomicReference<>(), Map.of(), false, new AtomicBoolean(false), List.of(voteUtilisateur)),
+                residenceAccessServiceStub(buildUser(21L, 7L)),
+                depenseServiceStub()
+        );
+
+        VoteDetailsResponse response = voteService.getVoteDetails(
+                10L,
+                new AuthenticatedUser(21L, "user@example.com", 7L, UserRole.USER)
+        );
+
+        assertThat(response.getVoteId()).isEqualTo(10L);
+        assertThat(response.getVotesUtilisateurs()).hasSize(1);
+        assertThat(response.getVotesUtilisateurs().get(0).getUserId()).isEqualTo(21L);
+        assertThat(response.getVotesUtilisateurs().get(0).getUserEmail()).isEqualTo("user@example.com");
+        assertThat(response.getVotesUtilisateurs().get(0).getChoix()).isEqualTo("POUR");
+        assertThat(response.getVotesUtilisateurs().get(0).getCommentaire()).isEqualTo("Bon pour moi");
     }
 
     @Test
@@ -179,7 +212,7 @@ class VoteServiceTest {
             final Map<VoteChoix, Long> counts,
             final boolean alreadyVoted
     ) {
-        return voteUtilisateurRepositoryProxy(savedVoteRef, counts, alreadyVoted, new AtomicBoolean(false));
+        return voteUtilisateurRepositoryProxy(savedVoteRef, counts, alreadyVoted, new AtomicBoolean(false), List.of());
     }
 
     private VoteUtilisateurRepository voteUtilisateurRepositoryProxy(
@@ -187,6 +220,16 @@ class VoteServiceTest {
             final Map<VoteChoix, Long> counts,
             final boolean alreadyVoted,
             final AtomicBoolean deleted
+    ) {
+        return voteUtilisateurRepositoryProxy(savedVoteRef, counts, alreadyVoted, deleted, List.of());
+    }
+
+    private VoteUtilisateurRepository voteUtilisateurRepositoryProxy(
+            final AtomicReference<VoteUtilisateur> savedVoteRef,
+            final Map<VoteChoix, Long> counts,
+            final boolean alreadyVoted,
+            final AtomicBoolean deleted,
+            final List<VoteUtilisateur> voteUtilisateurs
     ) {
         return (VoteUtilisateurRepository) Proxy.newProxyInstance(
                 VoteUtilisateurRepository.class.getClassLoader(),
@@ -207,6 +250,9 @@ class VoteServiceTest {
                     if ("deleteByVote_IdAndUtilisateur_Id".equals(method.getName())) {
                         deleted.set(true);
                         return null;
+                    }
+                    if ("findAllByVote_IdOrderByDateVoteAsc".equals(method.getName())) {
+                        return voteUtilisateurs;
                     }
                     if ("toString".equals(method.getName())) {
                         return "VoteUtilisateurRepositoryTestProxy";
@@ -262,8 +308,13 @@ class VoteServiceTest {
     }
 
     private User buildUser(final Long userId, final Long residenceId) {
+        return buildUserWithEmail(userId, residenceId, "user@example.com");
+    }
+
+    private User buildUserWithEmail(final Long userId, final Long residenceId, final String email) {
         User user = new User();
         user.setId(userId);
+        user.setEmail(email);
         user.setResidenceId(residenceId);
         user.setRole(UserRole.USER);
         return user;
