@@ -61,6 +61,8 @@ class AuthControllerTest {
                 user.setId(2L);
                 user.setEmail(request.getEmail().trim());
                 user.setResidence(residence);
+                user.setNumeroImmeuble(request.getNumeroImmeuble());
+                user.setCodeLogement(request.getCodeLogement());
                 user.setRole(UserRole.USER);
                 user.setStatus(UserStatus.PENDING);
                 LocalDateTime now = LocalDateTime.now();
@@ -124,6 +126,8 @@ class AuthControllerTest {
         request.setEmail("resident@example.com");
         request.setPassword("secret");
         request.setResidenceCode("RES-ABC123");
+        request.setNumeroImmeuble("B");
+        request.setCodeLogement("12A");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -133,6 +137,8 @@ class AuthControllerTest {
                 .andExpect(jsonPath("$.email").value("resident@example.com"))
                 .andExpect(jsonPath("$.residenceId").value(7L))
                 .andExpect(jsonPath("$.residenceCode").value("RES-ABC123"))
+                .andExpect(jsonPath("$.numeroImmeuble").value("B"))
+                .andExpect(jsonPath("$.codeLogement").value("12A"))
                 .andExpect(jsonPath("$.role").value("USER"))
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.createdAt").isNotEmpty())

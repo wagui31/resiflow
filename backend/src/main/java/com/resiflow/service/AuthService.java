@@ -80,6 +80,8 @@ public class AuthService {
         user.setRole(UserRole.USER);
         user.setStatus(UserStatus.PENDING);
         user.setStatutPaiement(StatutPaiement.EN_RETARD);
+        user.setNumeroImmeuble(normalizeOptionalValue(request.getNumeroImmeuble()));
+        user.setCodeLogement(normalizeOptionalValue(request.getCodeLogement()));
         user.setCreatedAt(now);
         user.setUpdatedAt(now);
 
@@ -112,6 +114,14 @@ public class AuthService {
 
     private boolean isBlank(final String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private String normalizeOptionalValue(final String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmedValue = value.trim();
+        return trimmedValue.isEmpty() ? null : trimmedValue;
     }
 
     private void validateRegisterRequest(final RegisterRequest request) {

@@ -5,6 +5,8 @@ public class CreateUserRequest {
     private String email;
     private String password;
     private Long residenceId;
+    private String numeroImmeuble;
+    private String codeLogement;
 
     public String getEmail() {
         return email;
@@ -28,5 +30,21 @@ public class CreateUserRequest {
 
     public void setResidenceId(final Long residenceId) {
         this.residenceId = residenceId;
+    }
+
+    public String getNumeroImmeuble() {
+        return numeroImmeuble;
+    }
+
+    public void setNumeroImmeuble(final String numeroImmeuble) {
+        this.numeroImmeuble = numeroImmeuble;
+    }
+
+    public String getCodeLogement() {
+        return codeLogement;
+    }
+
+    public void setCodeLogement(final String codeLogement) {
+        this.codeLogement = codeLogement;
     }
 }

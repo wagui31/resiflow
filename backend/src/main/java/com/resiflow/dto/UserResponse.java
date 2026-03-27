@@ -12,6 +12,8 @@ public class UserResponse {
     private final String email;
     private final Long residenceId;
     private final String residenceCode;
+    private final String numeroImmeuble;
+    private final String codeLogement;
     private final UserRole role;
     private final UserStatus status;
     private final StatutPaiement statutPaiement;
@@ -23,6 +25,8 @@ public class UserResponse {
             final String email,
             final Long residenceId,
             final String residenceCode,
+            final String numeroImmeuble,
+            final String codeLogement,
             final UserRole role,
             final UserStatus status,
             final StatutPaiement statutPaiement,
@@ -33,6 +37,8 @@ public class UserResponse {
         this.email = email;
         this.residenceId = residenceId;
         this.residenceCode = residenceCode;
+        this.numeroImmeuble = numeroImmeuble;
+        this.codeLogement = codeLogement;
         this.role = role;
         this.status = status;
         this.statutPaiement = statutPaiement;
@@ -45,12 +51,14 @@ public class UserResponse {
             final String email,
             final Long residenceId,
             final String residenceCode,
+            final String numeroImmeuble,
+            final String codeLogement,
             final UserRole role,
             final UserStatus status,
             final LocalDateTime createdAt,
             final LocalDateTime updatedAt
     ) {
-        this(id, email, residenceId, residenceCode, role, status, null, createdAt, updatedAt);
+        this(id, email, residenceId, residenceCode, numeroImmeuble, codeLogement, role, status, null, createdAt, updatedAt);
     }
 
     public static UserResponse fromUser(final User user) {
@@ -59,6 +67,8 @@ public class UserResponse {
                 user.getEmail(),
                 user.getResidenceId(),
                 user.getResidence() == null ? null : user.getResidence().getCode(),
+                user.getNumeroImmeuble(),
+                user.getCodeLogement(),
                 user.getRole(),
                 user.getStatus(),
                 user.getStatutPaiement(),
@@ -81,6 +91,14 @@ public class UserResponse {
 
     public String getResidenceCode() {
         return residenceCode;
+    }
+
+    public String getNumeroImmeuble() {
+        return numeroImmeuble;
+    }
+
+    public String getCodeLogement() {
+        return codeLogement;
     }
 
     public UserRole getRole() {

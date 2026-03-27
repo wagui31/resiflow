@@ -46,6 +46,12 @@ public class User {
     @Column(name = "statut_paiement", nullable = false)
     private StatutPaiement statutPaiement;
 
+    @Column(name = "numero_immeuble")
+    private String numeroImmeuble;
+
+    @Column(name = "code_logement")
+    private String codeLogement;
+
     @Column(name = "created_at", nullable = false)
     private LocalDateTime createdAt;
 
@@ -121,6 +127,22 @@ public class User {
 
     public void setStatutPaiement(final StatutPaiement statutPaiement) {
         this.statutPaiement = statutPaiement;
+    }
+
+    public String getNumeroImmeuble() {
+        return numeroImmeuble;
+    }
+
+    public void setNumeroImmeuble(final String numeroImmeuble) {
+        this.numeroImmeuble = numeroImmeuble;
+    }
+
+    public String getCodeLogement() {
+        return codeLogement;
+    }
+
+    public void setCodeLogement(final String codeLogement) {
+        this.codeLogement = codeLogement;
     }
 
     public LocalDateTime getCreatedAt() {

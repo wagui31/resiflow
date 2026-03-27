@@ -200,6 +200,8 @@ class AuthServiceTest {
         request.setEmail(" resident@example.com ");
         request.setPassword(" secret ");
         request.setResidenceCode(" RES-ABC123 ");
+        request.setNumeroImmeuble(" B ");
+        request.setCodeLogement(" 12A ");
 
         User result = authService.register(request);
 
@@ -208,6 +210,8 @@ class AuthServiceTest {
         assertThat(savedUserRef.get().getRole()).isEqualTo(UserRole.USER);
         assertThat(savedUserRef.get().getStatus()).isEqualTo(UserStatus.PENDING);
         assertThat(savedUserRef.get().getResidence().getCode()).isEqualTo("RES-ABC123");
+        assertThat(savedUserRef.get().getNumeroImmeuble()).isEqualTo("B");
+        assertThat(savedUserRef.get().getCodeLogement()).isEqualTo("12A");
         assertThat(savedUserRef.get().getCreatedAt()).isNotNull();
         assertThat(savedUserRef.get().getUpdatedAt()).isNotNull();
         assertThat(savedUserRef.get().getUpdatedAt()).isEqualTo(savedUserRef.get().getCreatedAt());
@@ -237,6 +241,8 @@ class AuthServiceTest {
                 saved.setEmail(user.getEmail());
                 saved.setPassword(user.getPassword());
                 saved.setResidence(user.getResidence());
+                saved.setNumeroImmeuble(user.getNumeroImmeuble());
+                saved.setCodeLogement(user.getCodeLogement());
                 saved.setRole(user.getRole());
                 saved.setStatus(user.getStatus());
                 saved.setCreatedAt(user.getCreatedAt());
