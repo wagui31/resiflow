@@ -3,7 +3,9 @@ package com.resiflow.service;
 import com.resiflow.dto.CreatePaiementRequest;
 import com.resiflow.entity.Paiement;
 import com.resiflow.entity.Residence;
+import com.resiflow.entity.StatutPaiement;
 import com.resiflow.entity.User;
+import com.resiflow.repository.UserRepository;
 import com.resiflow.repository.PaiementRepository;
 import com.resiflow.security.AuthenticatedUser;
 import java.math.BigDecimal;
@@ -19,17 +21,20 @@ public class PaiementService {
     private final ResidenceAccessService residenceAccessService;
     private final PaymentStatusService paymentStatusService;
     private final TransactionCagnotteService transactionCagnotteService;
+    private final UserRepository userRepository;
 
     public PaiementService(
             final PaiementRepository paiementRepository,
             final ResidenceAccessService residenceAccessService,
             final PaymentStatusService paymentStatusService,
-            final TransactionCagnotteService transactionCagnotteService
+            final TransactionCagnotteService transactionCagnotteService,
+            final UserRepository userRepository
     ) {
         this.paiementRepository = paiementRepository;
         this.residenceAccessService = residenceAccessService;
         this.paymentStatusService = paymentStatusService;
         this.transactionCagnotteService = transactionCagnotteService;
+        this.userRepository = userRepository;
     }
 
     @Transactional
@@ -69,6 +74,14 @@ public class PaiementService {
     public List<Paiement> getPaiementsByResidence(final Long residenceId, final AuthenticatedUser authenticatedUser) {
         residenceAccessService.getResidenceForAdmin(residenceId, authenticatedUser);
         return paiementRepository.findAllByResidence_IdOrderByDatePaiementDesc(residenceId);
+    }
+
+    @Transactional(readOnly = true)
+    public Long countResidentsEnRetard(final Long residenceId, final AuthenticatedUser authenticatedUser) {
+        residenceAccessService.getResidenceForMember(residenceId, authenticatedUser);
+        return userRepository.findAllByResidence_Id(residenceId).stream()
+                .filter(user -> paymentStatusService.calculateStatus(user) == StatutPaiement.EN_RETARD)
+                .count();
     }
 
     private void validateCreateRequest(final CreatePaiementRequest request) {

@@ -16,6 +16,7 @@ import com.resiflow.security.JwtProperties;
 import com.resiflow.security.JwtService;
 import com.resiflow.security.RestAuthenticationEntryPoint;
 import com.resiflow.service.AuthService;
+import com.resiflow.service.DashboardService;
 import com.resiflow.service.UserService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -75,6 +76,9 @@ class SecurityConfigTest {
 
     @MockitoBean
     private com.resiflow.service.ResidenceService residenceService;
+
+    @MockitoBean
+    private DashboardService dashboardService;
 
     @Test
     void healthEndpointIsPublic() throws Exception {
